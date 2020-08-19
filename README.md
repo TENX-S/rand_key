@@ -39,7 +39,7 @@ $ cargo run --release --example rpg_test 200000 200 300
 
 **Do not** try a very large number, even it's programly allowed, like `i128::MAX`, 
 unless you got extremely large RAM and great CPU, 
-or you may got a **blue screen or any unpredictable behaviours** that will harm your computer hardware or unsaved files since you don't [set a right `UNIT` number](https://docs.rs/rand_pwd/1.0.2/rand_pwd/).
+or you may got a **blue screen or any unpredictable behaviours** that will harm your computer hardware or unsaved files since you don't [set a right `UNIT` number](https://docs.rs/rand_pwd/1.0.3/rand_pwd/).
 
 **UNDER ANY CIRCUMSTANCES YOU USE THIS CRATE AND THE RESULT IT CAUSED, NO ONE WILL BE RESPONIBLE FOR YOU BEHAVIOURS.**
 

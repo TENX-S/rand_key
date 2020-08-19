@@ -1,7 +1,7 @@
 
 use std::env;
+use rand_pwd::RandPwd;
 use num_bigint::BigUint;
-use rand_pwd::{ RandPwd, ToRandPwd };
 
 
 fn main() {
@@ -16,6 +16,7 @@ fn main() {
         r_p.join();
         println!("{}", r_p);
     } else {
+        
         let ltr_cnt = demands[0].clone();
         let sbl_cnt = demands[1].clone();
         let num_cnt = demands[2].clone();

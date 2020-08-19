@@ -1,3 +1,32 @@
+//! A simple demo of partital API:
+//! ```rust
+//! use rand_pwd::{ RandPwd, ToRandPwd };
+
+//! fn main() {
+
+//!     let mut r_p = RandPwd::new(10, 2, 3); // For now, it's empty. Use method `join` to generate the password
+//!     r_p.join();                           // Now `r_p` has some content, be kept in its `content` field
+//!     println!("{}", r_p);                  // Print it on the screen
+//!     // One possible output: 7$pA7yMCw=2DPGN
+
+//!     // Or you can build from an existing `&str`
+//!     let mut r_p = RandPwd::from("=tE)n5f`sidR>BV"); // 10 letters, 4 symbols, 1 number
+//!     // You can rebuild a random password and with equivalent amount of letters, symbols and numbers. Like below
+//!     r_p.join();
+//!     println!("{}", r_p);
+//!     // One possible output: qS`Xlyhpmg~"V8[
+
+//!     // All the `String` and `&str` has implemented trait `ToRandPwd`
+//!     // which means you can use method `to_randpwd` to convert a `String` or `&str` to `RandPwd`
+
+//!     let mut r_p = "n4jpstv$dI,.z'K".to_randpwd().unwrap();
+
+//!     // Panic! Has non-ASCII character(s)!
+//!     // let mut r_p = RandPwd::from("🦀️🦀️🦀️");
+//!     // let mut r_p = "🦀️🦀️🦀️".to_randpwd();
+//! }
+//! ```
+
 #![allow(non_snake_case)]
 
 

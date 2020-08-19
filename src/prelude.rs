@@ -1,11 +1,10 @@
 
 use crate::ToRandPwd;
 
-pub use heapless;
 pub use rand::prelude::*;
 pub use rayon::prelude::*;
-pub use typenum::{ U3, U52, };
 pub use num_bigint::{ BigUint, ToBigUint };
+pub use heapless::{self, consts::{ U3, U52 }};
 pub use num_traits::{ Zero, One, ToPrimitive };
 pub use std::{
     convert::From,
