@@ -1,14 +1,16 @@
 [package]
 name = "rand_pwd"
-version = "1.0.0"
+version = "1.0.2"
 authors = ["TENX-S <ttenx@pm.me>"]
 edition = "2018"
 description = "Generate random password"
+documentation = "https://docs.rs/rand_pwd"
 homepage = "https://github.com/TENX-S/rand_pwd"
 repository = "https://github.com/TENX-S/rand_pwd"
 license = "MIT"
 readme = "README.md"
 keywords = ["password", "random", "random_password"]
+categories = ["cryptography"]
 
 
 [dependencies]
