@@ -1,12 +1,11 @@
 #![allow(non_snake_case)]
-#![feature(trait_alias)]
+
 
 #[macro_use]
 extern crate lazy_static;
 
 mod prelude;
 use prelude::*;
-
 
 
 /// struct `RandPwd`
@@ -16,16 +15,19 @@ pub struct RandPwd {
     sbl_cnt: BigUint,
     num_cnt: BigUint,
     content: String, // TODO: - use the heapless String
-    _UNIT: usize,
+    _UNIT: usize,    // TODO: - implement a smart _UNIT initialization to get best performance
 }
 
+pub trait ToRandPwd {
+    fn to_randpwd(&self) -> Option<RandPwd>;
+}
 
 impl RandPwd {
 
     /// Return an empty instance of `Result<RandPwd, &'static str>`
     /// # Example
     /// ```
-    /// use grp::RandPwd;
+    /// use rpg::RandPwd;
     /// use num_bigint::BigUint;
     /// let mut r_p = RandPwd::new(11, 4, 2);
     ///
@@ -38,9 +40,15 @@ impl RandPwd {
     /// let num_cnt = BigUint::from_str(&format!("{}000", usize::MAX)).unwrap();
     ///
     /// r_p = RandPwd::new(ltr_cnt, sbl_cnt, num_cnt);
+    ///
+    /// // You can also mix the `BigUint` with primitive type
     /// ```
     #[inline]
-    pub fn new<T: ToBigUint>(ltr_cnt: T, sbl_cnt: T, num_cnt: T) -> Self {
+    pub fn new<L, S, N>(ltr_cnt: L, sbl_cnt: S, num_cnt: N) -> Self
+    where L: ToBigUint,
+          S: ToBigUint,
+          N: ToBigUint,
+    {
 
         RandPwd {
             ltr_cnt: ltr_cnt.to_biguint().unwrap(),
@@ -53,32 +61,39 @@ impl RandPwd {
     }
 
 
-    /// Generate the password
-    #[inline]
-    pub fn join(&mut self) {
-        let data = &DATA;
-        let mut PWD: String = self._PWD((&self.ltr_cnt, &data[0]),
-                                        (&self.sbl_cnt, &data[1]),
-                                        (&self.num_cnt, &data[2]),);
-        let bytes = unsafe { PWD.as_bytes_mut() };
-        bytes.shuffle(&mut thread_rng());
-        self.content = bytes.par_iter().map(|s| *s as char).collect::<String>();
-    }
-
-
     /// Return the content of random password in `&str`
     /// # Example
     ///
     /// ```
-    /// use grp::RandPwd;
-    /// let mut rp = RandPwd::new(10, 2, 3);
-    /// rp.join();
-    /// println!("{}", rp.show());
-    /// // Output: 0fajn-ulS8S}7sn
+    /// use rpg::RandPwd;
+    /// let r_p = RandPwd::new(10, 2, 3);
+    /// assert_eq!("", r_p.val())
     /// ```
     #[inline]
-    pub fn show(&self) -> &str {
+    pub fn val(&self) -> &str {
         &self.content
+    }
+
+
+    /// Change the content of `RandPwd`
+    #[inline]
+    pub fn set_val(&mut self, val: &str) {
+        self.content = val.to_string();
+    }
+
+
+    /// Return the value of `UNIT`
+    #[inline]
+    pub fn unit(&self) -> usize {
+        self._UNIT
+    }
+
+
+    /// The value of UNIT is inversely proportional to memory overhead
+    /// In order to reduce the memory overhead, raise the value of `UNIT`
+    #[inline]
+    pub fn set_unit(&mut self, val: usize) {
+        self._UNIT = val;
     }
 
 
@@ -96,35 +111,48 @@ impl RandPwd {
     }
 
 
-    /// The value of UNIT is inversely proportional to memory overhead
-    /// In order to reduce the memory overhead, raise the value of `UNIT`
+    /// Get count of `RandPwd`
+    /// ```
+    /// use rpg::RandPwd;
+    /// use num_traits::ToPrimitive;
+    /// let r_p = RandPwd::new(10, 2, 3);
+    /// assert_eq!(r_p.get_cnt("ltr").unwrap().to_usize().unwrap(), 10);
+    /// assert_eq!(r_p.get_cnt("sbl").unwrap().to_usize().unwrap(), 2);
+    /// assert_eq!(r_p.get_cnt("num").unwrap().to_usize().unwrap(), 3);
+    /// ```
     #[inline]
-    pub fn set_unit(&mut self, val: usize) {
-        self._UNIT = val;
+    pub fn get_cnt(&self, kind: &str) -> Option<&BigUint> {
+        match kind {
+            "ltr" => Some(&self.ltr_cnt),
+            "sbl" => Some(&self.sbl_cnt),
+            "num" => Some(&self.num_cnt),
+
+            _   => None,
+        }
     }
 
 
     /// Change the count of letters, symbols or numbers of `RandPwd`
     /// ```
-    /// use grp::*;
+    /// use rpg::*;
     /// let mut r_p = RandPwd::new(10, 2, 3);
     ///
     /// // Set the letter's count
     /// r_p.set_cnt("ltr", 0);
     /// r_p.join();
-    /// println!("{}", r_p.show());
+    /// println!("{}", r_p.val());
     /// // Output: *029(
     ///
     /// // Set the symbol's count
     /// r_p.set_cnt("sbl", 0);
     /// r_p.join();
-    /// println!("{}", r_p.show());
+    /// println!("{}", r_p.val());
     /// // Output: nz1MriAl0j5on
     ///
     /// // Set the number's count
     /// r_p.set_cnt("num", 0);
     /// r_p.join();
-    /// println!("{}", r_p.show());
+    /// println!("{}", r_p.val());
     /// // Output: +iQiQGSXl(nv
     /// ```
     #[inline]
@@ -141,83 +169,20 @@ impl RandPwd {
     }
 
 
-    /// Generate random password
+    /// Generate the password for `RandPwd`
+    /// ```
+    /// use rpg::RandPwd;
+    /// let mut r_p = RandPwd::new(10, 2, 3);
+    /// r_p.join();
+    /// println!("{}", r_p);
+    /// ```
     #[inline]
-    pub(crate) fn _PWD<'a, T: P>(&self, ltr: I<'a, T>, sbl: I<'a, T>, num: I<'a, T>) -> String {
-        // TODO: - Improve readability
-        vec![(ltr.0, ltr.1),
-             (sbl.0, sbl.1),
-             (num.0, num.1),]
-            .iter()
-            .map(|(bignum, data)| {
-                self._DIV_UNIT(*bignum)
-                    .par_iter()
-                    .map(|cnt| {
-                        Self::_RAND_IDX(*cnt, data.len())
-                            .par_iter()
-                            // TODO: - Remove this `clone` which can cause huge overhead of both memory and CPU
-                            .map(|idx| data[*idx].clone())
-                            .collect::<String>()
-                    })
-                    .collect()
-            })
-            .collect::<Vec<Vec<_>>>()
-            .concat()
-            .join("")
-
+    pub fn join(&mut self) {
+        let mut PWD: String = _PWD(&self);
+        // This is absolutely safe, because they are all ASCII characters except control ones.
+        let bytes = unsafe { PWD.as_bytes_mut() };
+        bytes.shuffle(&mut thread_rng());
+        self.content = bytes.par_iter().map(|s| *s as char).collect::<String>();
     }
 
-
-    /// Resolve large numbers into smaller numbers
-    #[inline]
-    pub(crate) fn _DIV_UNIT<T: P>(&self, n: &T) -> Vec<usize> {
-
-        let mut n = n.to_biguint().unwrap();
-
-        let UNIT = BigUint::from(self._UNIT);
-        let mut ret = Vec::with_capacity((&n / &UNIT + BigUint::one()).to_usize().unwrap());
-
-        loop {
-            if n < UNIT {
-                ret.push(n.to_usize().unwrap());
-                break;
-            } else {
-                n -= UNIT.clone();
-                ret.push(self._UNIT);
-            }
-        }
-
-        ret
-
-    }
-
-
-    /// Generate n random numbers, each one is up to cnt
-    #[inline]
-    pub(crate) fn _RAND_IDX(n: impl ToBigUint, cnt: usize) -> Vec<usize> {
-
-        let mut n = n.to_biguint().unwrap();
-        let mut idxs = Vec::with_capacity(n.to_usize().unwrap());
-
-        while !n.is_zero() {
-            idxs.push(thread_rng().gen_range(0, cnt));
-            n -= BigUint::one();
-        }
-
-        idxs
-
-    }
-
-}
-
-impl Default for RandPwd {
-    fn default() -> Self {
-        RandPwd::new(0, 0, 0)
-    }
-}
-
-impl Display for RandPwd {
-    fn fmt(&self, f: &mut Formatter) -> Result {
-        write!(f, "{}", self.content)
-    }
 }
