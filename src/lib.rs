@@ -1,31 +1,44 @@
-//! A simple demo of partital API:
+//! # A simple demo of partital API:
 //! ```rust
 //! use rand_pwd::{ RandPwd, ToRandPwd };
-
 //! fn main() {
-
 //!     let mut r_p = RandPwd::new(10, 2, 3); // For now, it's empty. Use method `join` to generate the password
 //!     r_p.join();                           // Now `r_p` has some content, be kept in its `content` field
 //!     println!("{}", r_p);                  // Print it on the screen
 //!     // One possible output: 7$pA7yMCw=2DPGN
-
 //!     // Or you can build from an existing `&str`
 //!     let mut r_p = RandPwd::from("=tE)n5f`sidR>BV"); // 10 letters, 4 symbols, 1 number
 //!     // You can rebuild a random password and with equivalent amount of letters, symbols and numbers. Like below
 //!     r_p.join();
 //!     println!("{}", r_p);
 //!     // One possible output: qS`Xlyhpmg~"V8[
-
 //!     // All the `String` and `&str` has implemented trait `ToRandPwd`
 //!     // which means you can use method `to_randpwd` to convert a `String` or `&str` to `RandPwd`
-
 //!     let mut r_p = "n4jpstv$dI,.z'K".to_randpwd().unwrap();
-
 //!     // Panic! Has non-ASCII character(s)!
 //!     // let mut r_p = RandPwd::from("🦀️🦀️🦀️");
 //!     // let mut r_p = "🦀️🦀️🦀️".to_randpwd();
 //! }
 //! ```
+
+#![allow(broken_intra_doc_links)]
+//! # The `UNIT` field
+//! The UNIT field is used to help process large number in concurrent way.
+//!
+//! If you want to generate a huge random password with 1 million letters, symbols and numbers each,
+//! our program will accept such a sequence: [1M, 1M, 1M].
+//! However, it takes up huge RAM(Because these numbers are represented in `BigUint`, kind of a `Vec`).
+//! And the procedure is single-threaded, you can only process them one by one.
+//!
+//! My approach is to divide these large numbers into many small numbers,
+//! and then process these small numbers in parallel,
+//! so the small numbers here can be understood as `UNIT`.
+//! For 1M letters, we set 1K as the unit value, so [1M] = [1K, 1K, …, 1K] (1000 ones).
+//! And we just need to hand this sequence to [rayon](https://github.com/rayon-rs/rayon) for processing.
+//! But the disadvantages are also obvious, if `UNIT` number is too small, like default value: 1,
+//! then capcity of the `Vec` is 1M at least!
+//! It will take up huge RAM (even all of them) and may harm your computer.
+//! In next version, there will be a smart `UNIT` value to end this problem.
 
 #![allow(non_snake_case)]
 
@@ -57,7 +70,8 @@ impl RandPwd {
 
     /// Return an empty instance of `Result<RandPwd, &'static str>`
     /// # Example
-    /// 
+    ///
+    /// Basic usage:
     /// ```
     /// use rand_pwd::RandPwd;
     /// use num_bigint::BigUint;
@@ -96,6 +110,7 @@ impl RandPwd {
     /// Return the content of random password in `&str`
     /// # Example
     ///
+    /// Basic usage:
     /// ```
     /// use rand_pwd::RandPwd;
     /// let r_p = RandPwd::new(10, 2, 3);
@@ -107,48 +122,64 @@ impl RandPwd {
     }
 
 
-    /// Change the content of `RandPwd`, and updates its fields
+    /// Change the content of `RandPwd`, depend on the name of operation you passed.
+    /// There's two operations: **update** and **check**
+    ///
+    /// update means just replace the value you've passed and update the counts field
+    ///
+    /// check means if the counts field of new value doesn't match the old one, it will panic!
+    /// if checking passed, the old one will be replaced
     /// # Example
-    /// 
+    ///
+    /// Basic usage:
     /// ```
+    /// // update
     /// use rand_pwd::RandPwd;
     /// use num_traits::ToPrimitive;
     /// let r_p = RandPwd::new(10, 2, 3);
-    /// r_p.set_val_update("123456");
+    /// r_p.set_val("123456", "update");
     /// assert_eq!(r_p.get_cnt("ltr").unwrap().to_usize().unwrap(), 0);
     /// assert_eq!(r_p.get_cnt("sbl").unwrap().to_usize().unwrap(), 0);
     /// assert_eq!(r_p.get_cnt("num").unwrap().to_usize().unwrap(), 6);
-    /// ```
-    #[inline]
-    pub fn set_val_update(&mut self, val: &str) {
-        self.ltr_cnt = _CNT(val).0;
-        self.sbl_cnt = _CNT(val).1;
-        self.num_cnt = _CNT(val).2;
-        self.content = val.to_string();
-    }
-
-    /// Change the content of `RandPwd`, but check its fields
-    /// If it's wrong, it will panic
-    /// # Example
     ///
-    /// ```
+    /// // check
     /// use rand_pwd::RandPwd;
     /// let r_p = RandPwd::new(10, 2, 3);
-    /// r_p.set_val_check("123456"); // Will panic
+    /// r_p.set_val("123456", "check"); // Will panic
     /// ```
     #[inline]
-    pub fn set_val_check(&mut self, val: &str) {
-        if (self.ltr_cnt.to_usize().unwrap(),
-            self.sbl_cnt.to_usize().unwrap(),
-            self.num_cnt.to_usize().unwrap()) == _CNT(val) {
-            self.content = val;
-        } else {
-            panic!("The fields of {:?} is not right", val);
+    pub fn set_val(&mut self, val: &str, op: &str) {
+        match op {
+            "update" => {
+                self.ltr_cnt = _CNT(val).0;
+                self.sbl_cnt = _CNT(val).1;
+                self.num_cnt = _CNT(val).2;
+                self.content = val.to_string();
+            },
+            "check" => {
+                if (self.ltr_cnt.to_usize().unwrap(),
+                    self.sbl_cnt.to_usize().unwrap(),
+                    self.num_cnt.to_usize().unwrap()) == _CNT(val) {
+                    self.content = val;
+                } else {
+                    panic!("The fields of {:?} is not right", val);
+                }
+            },
+
+            _ => (),
         }
     }
 
 
     /// Return the value of `UNIT`
+    /// # Example
+    ///
+    /// Basic Usage:
+    /// ```
+    /// use rand_pwd::RandPwd;
+    /// let r_p = RandPwd::new(10, 2, 3); // The default value of unit is 1
+    /// assert_eq!(r_p.unit(), 1);
+    /// ```
     #[inline]
     pub fn unit(&self) -> usize {
         self._UNIT
@@ -185,6 +216,9 @@ impl RandPwd {
 
 
     /// Get count of `RandPwd`
+    /// # Example
+    ///
+    /// Basic usage:
     /// ```
     /// use rand_pwd::RandPwd;
     /// use num_traits::ToPrimitive;
@@ -206,6 +240,9 @@ impl RandPwd {
 
 
     /// Change the count of letters, symbols or numbers of `RandPwd`
+    /// # Example
+    ///
+    /// Basic usage:
     /// ```
     /// use rand_pwd::*;
     /// let mut r_p = RandPwd::new(10, 2, 3);
@@ -243,6 +280,9 @@ impl RandPwd {
 
 
     /// Generate the password for `RandPwd`
+    /// # Example
+    ///
+    /// Basic usage:
     /// ```
     /// use rand_pwd::RandPwd;
     /// let mut r_p = RandPwd::new(10, 2, 3);
