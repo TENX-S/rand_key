@@ -216,7 +216,7 @@ impl From<&str> for RandPwd {
     fn from(s: &str) -> Self {
         let (ltr_cnt, sbl_cnt, num_cnt) = _CNT(s);
         let mut r_p = RandPwd::new(ltr_cnt, sbl_cnt, num_cnt);
-        r_p.set_val(s);
+        r_p.set_val(s, "update");
         r_p.set_unit(1);
 
         r_p

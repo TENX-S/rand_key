@@ -151,16 +151,16 @@ impl RandPwd {
     pub fn set_val(&mut self, val: &str, op: &str) {
         match op {
             "update" => {
-                self.ltr_cnt = _CNT(val).0;
-                self.sbl_cnt = _CNT(val).1;
-                self.num_cnt = _CNT(val).2;
+                self.ltr_cnt = _CNT(val).0.to_biguint().unwrap();
+                self.sbl_cnt = _CNT(val).1.to_biguint().unwrap();
+                self.num_cnt = _CNT(val).2.to_biguint().unwrap();
                 self.content = val.to_string();
             },
             "check" => {
                 if (self.ltr_cnt.to_usize().unwrap(),
                     self.sbl_cnt.to_usize().unwrap(),
                     self.num_cnt.to_usize().unwrap()) == _CNT(val) {
-                    self.content = val;
+                    self.content = val.to_string();
                 } else {
                     panic!("The fields of {:?} is not right", val);
                 }
