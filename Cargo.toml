@@ -1,6 +1,6 @@
 [package]
 name = "rand_pwd"
-version = "1.0.3"
+version = "1.1.2"
 authors = ["TENX-S <ttenx@pm.me>"]
 edition = "2018"
 description = "Generate random password"

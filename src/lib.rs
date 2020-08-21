@@ -60,6 +60,7 @@ pub struct RandPwd {
     _UNIT: usize,    // TODO: - implement a smart _UNIT initialization to get best performance
 }
 
+
 /// A generic trait for converting a value to a `RandPwd`.
 pub trait ToRandPwd {
     /// Converts the value of `self` to a `RandPwd`.
@@ -154,13 +155,13 @@ impl RandPwd {
                 self.ltr_cnt = _CNT(val).0.to_biguint().unwrap();
                 self.sbl_cnt = _CNT(val).1.to_biguint().unwrap();
                 self.num_cnt = _CNT(val).2.to_biguint().unwrap();
-                self.content = val.to_string();
+                self.content = val.into();
             },
             "check" => {
                 if (self.ltr_cnt.to_usize().unwrap(),
                     self.sbl_cnt.to_usize().unwrap(),
                     self.num_cnt.to_usize().unwrap()) == _CNT(val) {
-                    self.content = val.to_string();
+                    self.content = val.into();
                 } else {
                     panic!("The fields of {:?} is not right", val);
                 }
@@ -291,7 +292,7 @@ impl RandPwd {
     /// ```
     #[inline]
     pub fn join(&mut self) {
-        let mut PWD: String = _PWD(&self);
+        let mut PWD: String = _PWD(self);
         // This is absolutely safe, because they are all ASCII characters except control ones.
         let bytes = unsafe { PWD.as_bytes_mut() };
         bytes.shuffle(&mut thread_rng());

@@ -37,9 +37,9 @@ pub(crate) fn _DATA() -> CharVec {
             .into_iter()
             .map(|x| {
                 let ch = x as u8 as char;
-                if ch.is_ascii_alphabetic()  { letters.push(ch.to_string()).unwrap(); }
-                if ch.is_ascii_punctuation() { symbols.push(ch.to_string()).unwrap(); }
-                if ch.is_ascii_digit()       { numbers.push(ch.to_string()).unwrap(); }
+                if ch.is_ascii_alphabetic()  { letters.push(ch.into()).unwrap(); }
+                if ch.is_ascii_punctuation() { symbols.push(ch.into()).unwrap(); }
+                if ch.is_ascii_digit()       { numbers.push(ch.into()).unwrap(); }
             })
             .collect::<()>();
 
@@ -94,21 +94,17 @@ pub(crate) fn _RAND_IDX(n: impl ToBigUint, cnt: usize) -> Vec<usize> {
 
 /// Resolve large numbers into smaller numbers
 #[inline]
-pub(crate) fn _DIV_UNIT<T>(unit: usize, n: &T) -> Vec<usize>
-    where T: Clone + ToBigUint + SubAssign + PartialOrd
-{
+pub(crate) fn _DIV_UNIT(unit: usize, n: &mut BigUint) -> Vec<usize> {
 
-    let mut n = n.to_biguint().unwrap();
-
-    let UNIT = BigUint::from(unit);
-    let mut ret = Vec::with_capacity((&n / &UNIT + BigUint::one()).to_usize().unwrap());
+    let UNIT: BigUint = unit.into();
+    let mut ret = Vec::with_capacity((n.clone() / &UNIT + BigUint::one()).to_usize().unwrap());
 
     loop {
-        if n < UNIT {
+        if n.clone() < UNIT {
             ret.push(n.to_usize().unwrap());
             break;
         } else {
-            n -= UNIT.clone();
+            *n -= UNIT.clone();
             ret.push(unit);
         }
     }
@@ -119,20 +115,21 @@ pub(crate) fn _DIV_UNIT<T>(unit: usize, n: &T) -> Vec<usize>
 
 use crate::RandPwd;
 
+
 /// Generate random password but in the order like "letters->symbols->numbers"
 #[inline]
-pub(crate) fn _PWD(r_p: &RandPwd) -> String {
+pub(crate) fn _PWD<'a>(r_p: &mut RandPwd) -> String {
     // TODO: - Improve readability
 
     let unit = r_p._UNIT;
     let data = &DATA;
 
-    vec![(&r_p.ltr_cnt, &data[0]),
-         (&r_p.sbl_cnt, &data[1]),
-         (&r_p.num_cnt, &data[2]),]
-        .iter()
+    vec![(&mut r_p.ltr_cnt, &data[0]),
+         (&mut r_p.sbl_cnt, &data[1]),
+         (&mut r_p.num_cnt, &data[2]),]
+        .into_iter()
         .map(|(bignum, data)| {
-            _DIV_UNIT(unit, *bignum)
+            _DIV_UNIT(unit, bignum)
                 .par_iter()
                 .map(|cnt| {
                     _RAND_IDX(*cnt, data.len())
@@ -229,7 +226,7 @@ impl<T: AsRef<str>> ToRandPwd for T {
 
     #[inline]
     fn to_randpwd(&self) -> Option<RandPwd> {
-        Some(RandPwd::from(self.as_ref()))
+        Some(self.as_ref().into())
     }
 
 }

@@ -15,6 +15,7 @@ fn main() {
         r_p = RandPwd::new(10, 2, 3);
         r_p.join();
         println!("{}", r_p);
+
     } else {
         
         let ltr_cnt = demands[0].clone();
