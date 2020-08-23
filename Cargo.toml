@@ -20,3 +20,11 @@ heapless = "0.5.5"
 num-bigint = "0.3.0"
 num-traits = "0.2.12"
 lazy_static = "1.4.0"
+
+[profile.release]
+lto = true
+panic = 'abort'
+codegen-units = 1
+
+
+
