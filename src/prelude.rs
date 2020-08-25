@@ -118,7 +118,7 @@ use crate::RandPwd;
 
 /// Generate random password but in the order like "letters->symbols->numbers"
 #[inline]
-pub(crate) fn _PWD<'a>(r_p: &mut RandPwd) -> String {
+pub(crate) fn _PWD(r_p: &mut RandPwd) -> String {
     // TODO: - Improve readability
 
     let unit = r_p._UNIT;

@@ -297,6 +297,7 @@ impl RandPwd {
         let bytes = unsafe { PWD.as_bytes_mut() };
         bytes.shuffle(&mut thread_rng());
         self.content = bytes.par_iter().map(|s| *s as char).collect::<String>();
+
     }
 
 }
