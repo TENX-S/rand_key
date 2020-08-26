@@ -1,4 +1,4 @@
-//! # A simple demo of partital API:
+//! # Usage:
 //! ```rust
 //! use rand_pwd::{ RandPwd, ToRandPwd };
 //! fn main() {
@@ -20,8 +20,6 @@
 //!     // let mut r_p = "🦀️🦀️🦀️".to_randpwd();
 //! }
 //! ```
-
-#![allow(broken_intra_doc_links)]
 //! # The `UNIT` field
 //! The UNIT field is used to help process large number in concurrent way.
 //!

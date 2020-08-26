@@ -161,7 +161,7 @@ impl Display for RandPwd {
 
     #[inline]
     fn fmt(&self, f: &mut Formatter) -> Result {
-        write!(f, "\n{}", self.content)
+        write!(f, "\n{}\n", self.content)
     }
 
 }
@@ -207,6 +207,16 @@ impl AsRef<str> for RandPwd {
 }
 
 
+impl<T: AsRef<str>> ToRandPwd for T {
+
+    #[inline]
+    fn to_randpwd(&self) -> Option<RandPwd> {
+        Some(self.as_ref().into())
+    }
+
+}
+
+
 impl From<&str> for RandPwd {
 
     #[inline]
@@ -217,16 +227,6 @@ impl From<&str> for RandPwd {
         r_p.set_unit(1);
 
         r_p
-    }
-
-}
-
-
-impl<T: AsRef<str>> ToRandPwd for T {
-
-    #[inline]
-    fn to_randpwd(&self) -> Option<RandPwd> {
-        Some(self.as_ref().into())
     }
 
 }
