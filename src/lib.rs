@@ -35,17 +35,16 @@
 //! And we just need to hand this sequence to [rayon](https://github.com/rayon-rs/rayon) for processing.
 //! But the disadvantages are also obvious, if `UNIT` number is too small, like default value: 1,
 //! then capcity of the `Vec` is 1M at least!
-//! It will take up huge RAM (even all of them) and may harm your computer.
-//! In next version, there will be a smart `UNIT` value to end this problem.
+//! It will take up huge even all RAM and may harm your computer.
+//! In the next version, there will be a smart `UNIT` value to fix this problem.
+
 
 #![allow(non_snake_case)]
 
 
-#[macro_use]
-extern crate lazy_static;
-
 mod prelude;
 use prelude::*;
+
 
 
 /// struct `RandPwd`
@@ -54,18 +53,23 @@ pub struct RandPwd {
     ltr_cnt: BigUint,
     sbl_cnt: BigUint,
     num_cnt: BigUint,
-    content: String, // TODO: - use the heapless String
-    _UNIT: usize,    // TODO: - implement a smart _UNIT initialization to get best performance
+    content: String,
+    _UNIT: usize,    // TODO: - implement a smart _UNIT initialization to get the best performance
+    _DATA: Data,
 }
 
 
 /// A generic trait for converting a value to a `RandPwd`.
 pub trait ToRandPwd {
+
     /// Converts the value of `self` to a `RandPwd`.
     fn to_randpwd(&self) -> Option<RandPwd>;
+
 }
 
+
 impl RandPwd {
+
 
     /// Return an empty instance of `Result<RandPwd, &'static str>`
     /// # Example
@@ -100,7 +104,8 @@ impl RandPwd {
             sbl_cnt: sbl_cnt.to_biguint().unwrap(),
             num_cnt: num_cnt.to_biguint().unwrap(),
             content: String::new(),
-            _UNIT: 1
+            _UNIT: 1,
+            _DATA: Data::default()
         }
 
     }
@@ -135,30 +140,35 @@ impl RandPwd {
     /// // update
     /// use rand_pwd::RandPwd;
     /// use num_traits::ToPrimitive;
-    /// let r_p = RandPwd::new(10, 2, 3);
+    /// use num_bigint::BigUint;
+    /// let mut r_p = RandPwd::new(10, 2, 3);
     /// r_p.set_val("123456", "update");
-    /// assert_eq!(r_p.get_cnt("ltr").unwrap().to_usize().unwrap(), 0);
-    /// assert_eq!(r_p.get_cnt("sbl").unwrap().to_usize().unwrap(), 0);
-    /// assert_eq!(r_p.get_cnt("num").unwrap().to_usize().unwrap(), 6);
+    /// assert_eq!(*r_p.get_cnt("ltr").unwrap(), BigUint::from(0_usize));
+    /// assert_eq!(*r_p.get_cnt("sbl").unwrap(), BigUint::from(0_usize));
+    /// assert_eq!(*r_p.get_cnt("num").unwrap(), BigUint::from(6_usize));
     ///
     /// // check
-    /// use rand_pwd::RandPwd;
-    /// let r_p = RandPwd::new(10, 2, 3);
-    /// r_p.set_val("123456", "check"); // Will panic
+    /// let mut r_p = RandPwd::new(10, 2, 3);
+    /// // r_p.set_val("123456", "check"); // Will panic
     /// ```
     #[inline]
     pub fn set_val(&mut self, val: &str, op: &str) {
+
         match op {
+
             "update" => {
                 self.ltr_cnt = _CNT(val).0.to_biguint().unwrap();
                 self.sbl_cnt = _CNT(val).1.to_biguint().unwrap();
                 self.num_cnt = _CNT(val).2.to_biguint().unwrap();
+
                 self.content = val.into();
             },
+
             "check" => {
                 if (self.ltr_cnt.to_usize().unwrap(),
                     self.sbl_cnt.to_usize().unwrap(),
-                    self.num_cnt.to_usize().unwrap()) == _CNT(val) {
+                    self.num_cnt.to_usize().unwrap(),) == _CNT(val) {
+
                     self.content = val.into();
                 } else {
                     panic!("The fields of {:?} is not right", val);
@@ -193,12 +203,52 @@ impl RandPwd {
     }
 
 
+    /// Return the shared reference of `_DATA`
+    #[inline]
+    pub fn data(&self) -> &Data {
+        &self._DATA
+    }
+
+
+    /// Return the mutable reference of `_DATA`
+    #[inline]
+    pub fn mut_data(&mut self) -> &mut Data {
+        &mut self._DATA
+    }
+
+
+    /// Delete the character(s) you don't want see in the result
+    ///
+    /// # Example
+    ///
+    /// Basic Usage:
+    /// ```
+    /// use rand_pwd::RandPwd;
+    /// let mut r_p = RandPwd::new(1, 2, 3);
+    /// r_p.del(&["1", "2", "3", "4", "5", "6", "7", "8", "9"][..]);
+    /// r_p.join();
+    /// println!("{}", r_p);
+    /// ```
+    /// Output:
+    ///
+    /// `0"<00k`
+    #[inline]
+    pub fn del(&mut self, chs: &[&str]) {
+
+        self._DATA.del(chs);
+
+    }
+
+
     /// Returns the length of this `RandPwd`, in both bytes and [char]s.
     /// # Example
     ///
     /// Basic usage:
     /// ```
     /// use rand_pwd::RandPwd;
+    /// let mut r_p = RandPwd::new(10, 2, 3);
+    /// r_p.join();
+    /// assert_eq!(r_p.len(), 15);
     /// ```
     ///
     #[inline]
@@ -228,7 +278,9 @@ impl RandPwd {
     /// ```
     #[inline]
     pub fn get_cnt(&self, kind: &str) -> Option<&BigUint> {
+
         match kind {
+
             "ltr" => Some(&self.ltr_cnt),
             "sbl" => Some(&self.sbl_cnt),
             "num" => Some(&self.num_cnt),
@@ -266,6 +318,7 @@ impl RandPwd {
     /// ```
     #[inline]
     pub fn set_cnt<T: ToBigUint>(&mut self, kind: &str, val: T) -> Option<()> {
+
         match kind {
 
             "ltr" => self.ltr_cnt = val.to_biguint()?,
@@ -274,6 +327,7 @@ impl RandPwd {
 
             _     => (),
         }
+
         Some(())
     }
 
@@ -290,12 +344,14 @@ impl RandPwd {
     /// ```
     #[inline]
     pub fn join(&mut self) {
-        let mut PWD: String = _PWD(self);
+
+        let mut PWD: String = _PWD(&mut self.clone());
         // This is absolutely safe, because they are all ASCII characters except control ones.
         let bytes = unsafe { PWD.as_bytes_mut() };
         bytes.shuffle(&mut thread_rng());
         self.content = bytes.par_iter().map(|s| *s as char).collect::<String>();
 
     }
+
 
 }

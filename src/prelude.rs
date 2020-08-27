@@ -1,51 +1,101 @@
 
-use crate::ToRandPwd;
-
 pub use rand::prelude::*;
 pub use rayon::prelude::*;
 pub use num_bigint::{ BigUint, ToBigUint };
-pub use heapless::{self, consts::{ U3, U52 }};
 pub use num_traits::{ Zero, One, ToPrimitive };
 pub use std::{
+    str::FromStr,
     convert::From,
+    collections::HashSet,
     ops::{ Add, SubAssign, AddAssign, },
     fmt::{ Display, Formatter, Result, },
 };
 
-pub type StrVec = heapless::Vec<String, U52>;
-pub type CharVec = heapless::Vec<StrVec, U3>;
 
 
-lazy_static! {
-    /// Cached the characters set
-    pub static ref DATA: CharVec = _DATA();
+
+#[derive(Clone, Debug)]
+pub struct Data(Vec<Vec<String>>);
+
+
+impl Data {
+
+    #[inline]
+    pub fn inner(&self) -> &Vec<Vec<String>> {
+        &self.0
+    }
+
+
+    #[inline]
+    pub fn mut_inner(&mut self) -> &mut Vec<Vec<String>> {
+        &mut self.0
+    }
+
+
+    #[inline]
+    pub(crate) fn del(&mut self, chs: &[&str]) {
+
+        let mut chs = chs.into_iter().map(|ch| char::from_str(*ch).unwrap()).collect::<Vec<_>>();
+
+        chs.sort();
+        chs.dedup();
+
+        for ch in chs {
+
+            if !ch.is_ascii() {
+                panic!("Non-ASCII character: {:?}", ch);
+            }
+
+            if self.0.concat().contains(&ch.to_string()) {
+
+                let mut idx;
+
+                if ch.is_ascii_alphabetic() {
+                    idx = self.0[0].binary_search(&ch.to_string()).unwrap();
+                    self.0[0].remove(idx);
+                }
+                if ch.is_ascii_punctuation() {
+                    idx = self.0[1].binary_search(&ch.to_string()).unwrap();
+                    self.0[1].remove(idx);
+                }
+                if ch.is_ascii_digit() {
+                    idx = self.0[2].binary_search(&ch.to_string()).unwrap();
+                    self.0[2].remove(idx);
+                }
+            } else {
+                panic!("{:?} is not letters, punctuations or digits", ch);
+            }
+        }
+    }
+
 }
 
 
 /// Characters set
+///
 /// return letters, symbols, numbers in `CharVec`
 #[inline]
-pub(crate) fn _DATA() -> CharVec {
+pub(crate) fn _DATA() -> Vec<Vec<String>> {
 
-    let mut letters = StrVec::new();
-    let mut symbols = StrVec::new();
-    let mut numbers = StrVec::new();
+    let mut letters = Vec::<String>::new();
+    let mut symbols = Vec::<String>::new();
+    let mut numbers = Vec::<String>::new();
 
-    let mut charset = CharVec::new();
+    let mut charset = vec![];
 
     let _ = (33..127)
             .into_iter()
             .map(|x| {
                 let ch = x as u8 as char;
-                if ch.is_ascii_alphabetic()  { letters.push(ch.into()).unwrap(); }
-                if ch.is_ascii_punctuation() { symbols.push(ch.into()).unwrap(); }
-                if ch.is_ascii_digit()       { numbers.push(ch.into()).unwrap(); }
+                if ch.is_ascii_alphabetic()  { letters.push(ch.into()); }
+                if ch.is_ascii_punctuation() { symbols.push(ch.into()); }
+                if ch.is_ascii_digit()       { numbers.push(ch.into()); }
             })
             .collect::<()>();
 
-    charset.push(letters).unwrap();
-    charset.push(symbols).unwrap();
-    charset.push(numbers).unwrap();
+    charset.push(letters);
+    charset.push(symbols);
+    charset.push(numbers);
 
     charset
 
@@ -78,13 +128,13 @@ pub(crate) fn _CNT<T: AsRef<str>>(content: T) -> (usize, usize, usize) {
 
 /// Generate n random numbers, each one is up to cnt
 #[inline]
-pub(crate) fn _RAND_IDX(n: impl ToBigUint, cnt: usize) -> Vec<usize> {
+pub(crate) fn _RAND_IDX(cnt: impl ToBigUint, length: usize) -> Vec<usize> {
 
-    let mut n = n.to_biguint().unwrap();
+    let mut n = cnt.to_biguint().unwrap();
     let mut idxs = Vec::with_capacity(n.to_usize().unwrap());
 
     while !n.is_zero() {
-        idxs.push(thread_rng().gen_range(0, cnt));
+        idxs.push(thread_rng().gen_range(0, length));
         n -= BigUint::one();
     }
 
@@ -113,7 +163,7 @@ pub(crate) fn _DIV_UNIT(unit: usize, n: &mut BigUint) -> Vec<usize> {
 
 }
 
-use crate::RandPwd;
+use crate::{ RandPwd, ToRandPwd };
 
 
 /// Generate random password but in the order like "letters->symbols->numbers"
@@ -122,7 +172,7 @@ pub(crate) fn _PWD(r_p: &mut RandPwd) -> String {
     // TODO: - Improve readability
 
     let unit = r_p._UNIT;
-    let data = &DATA;
+    let data = &r_p._DATA.0;
 
     vec![(&mut r_p.ltr_cnt, &data[0]),
          (&mut r_p.sbl_cnt, &data[1]),
@@ -157,6 +207,16 @@ impl Default for RandPwd {
 }
 
 
+impl Default for Data {
+
+    #[inline]
+    fn default() -> Self {
+        Data(_DATA())
+    }
+
+}
+
+
 impl Display for RandPwd {
 
     #[inline]
@@ -170,6 +230,22 @@ impl Display for RandPwd {
 impl Add for RandPwd {
 
     type Output = Self;
+
+    /// # Example
+    ///
+    /// Basic Usage:
+    /// ```
+    /// use rand_pwd::RandPwd;
+    /// use num_bigint::BigUint;
+    /// let mut r0 = RandPwd::new(1, 2, 3);
+    /// let mut r1 = RandPwd::new(4, 5, 6);
+    /// let mut r2 = r0 + r1;
+    ///
+    /// assert_eq!(*r2.get_cnt("ltr").unwrap(), BigUint::from(5_usize));
+    /// assert_eq!(*r2.get_cnt("sbl").unwrap(), BigUint::from(7_usize));
+    /// assert_eq!(*r2.get_cnt("num").unwrap(), BigUint::from(9_usize));
+    ///
+    /// ```
     #[inline]
     fn add(self, rhs: Self) -> Self {
         RandPwd {
@@ -178,13 +254,29 @@ impl Add for RandPwd {
             num_cnt: self.num_cnt + rhs.num_cnt,
             content: self.content + &rhs.content,
             _UNIT: 1,
+            _DATA: Data::default(),
         }
     }
 }
 
 
+
 impl AddAssign for RandPwd {
 
+    /// # Example
+    ///
+    /// Basic Usage:
+    /// ```
+    /// use rand_pwd::RandPwd;
+    /// use num_bigint::BigUint;
+    /// let mut r0 = RandPwd::new(1, 2, 3);
+    /// let mut r1 = RandPwd::new(4, 5, 6);
+    /// r0 += r1;
+    /// assert_eq!(*r0.get_cnt("ltr").unwrap(), BigUint::from(5_usize));
+    /// assert_eq!(*r0.get_cnt("sbl").unwrap(), BigUint::from(7_usize));
+    /// assert_eq!(*r0.get_cnt("num").unwrap(), BigUint::from(9_usize));
+    ///
+    /// ```
     #[inline]
     fn add_assign(&mut self, rhs: Self) {
 
