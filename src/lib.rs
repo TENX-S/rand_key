@@ -41,10 +41,10 @@
 
 #![allow(non_snake_case)]
 
-
+mod utils;
 mod prelude;
-use prelude::*;
 
+use utils::*;
 
 
 /// struct `RandPwd`
@@ -152,7 +152,7 @@ impl RandPwd {
     /// // r_p.set_val("123456", "check"); // Will panic
     /// ```
     #[inline]
-    pub fn set_val(&mut self, val: &str, op: &str) {
+    pub fn set_val(&mut self, val: &str, op: &str) -> Result<(), String> {
 
         let (val_ltr_cnt, val_sbl_cnt, val_num_cnt) = _CNT(val);
 
@@ -162,8 +162,9 @@ impl RandPwd {
                 self.ltr_cnt = val_ltr_cnt;
                 self.sbl_cnt = val_sbl_cnt;
                 self.num_cnt = val_num_cnt;
-
                 self.content = val.into();
+
+                Ok(())
             },
 
             "check" => {
@@ -173,12 +174,14 @@ impl RandPwd {
                                         &val_sbl_cnt,
                                         &val_num_cnt,) {
                     self.content = val.into();
+
+                    Ok(())
                 } else {
-                    panic!("The fields of {:?} is not right", val);
+                    Err(format!("The fields of {:?} is not right", val))
                 }
             },
 
-            _ => (),
+            _ => Ok(()),
         }
     }
 
@@ -220,16 +223,6 @@ impl RandPwd {
     pub fn data(&self) -> &Vec<Vec<String>> {
         &self.DATA
     }
-
-    /// Set the user-defined data
-    // #[inline]
-    // pub fn set_data<T: AsRef<str>>(&mut self, val: &[T]) -> result::Result<(), Box<dyn Error>> {
-    //
-    //     self.DATA = val.iter().map(|x| x.as_ref().to_string()).collect::<Vec<_>>();
-    //
-    //     Ok(())
-    //
-    // }
 
 
     /// Returns the length of this `RandPwd`, in both bytes and [char]s.

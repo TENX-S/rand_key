@@ -32,6 +32,9 @@ $ cargo run --release --example rpg_test 16 2 3
 
 # Try a larger number!
 $ cargo run --release --example rpg_test 200000 200 300
+
+# Larger and set the unit value
+$ cargo run --release --example rpg_test 100000000 0 0 100 
 ```
 
 

@@ -17,8 +17,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         r_p.join();
         println!("{}", r_p);
 
-
-
     } else {
         
         let ltr_cnt = demands[0].clone();
