@@ -5,9 +5,11 @@ pub use num_bigint::{ BigUint, ToBigUint };
 pub use num_traits::{ Zero, One, ToPrimitive };
 
 
+
+
 /// Characters set
 ///
-/// return letters, symbols, numbers in `CharVec`
+/// return letters, symbols, numbers in `Vec<Vec<String>>`
 #[inline]
 pub(crate) fn _DATA() -> Vec<Vec<String>> {
 
@@ -36,7 +38,9 @@ pub(crate) fn _DATA() -> Vec<Vec<String>> {
 }
 
 
-/// Count the number of a string
+/// Count the fields of `RandPwd` in a string
+///
+/// TODO : - Need doc
 #[inline]
 pub(crate) fn _CNT<T: AsRef<str>>(content: T) -> (BigUint, BigUint, BigUint) {
 
@@ -75,6 +79,8 @@ pub(crate) fn _CNT<T: AsRef<str>>(content: T) -> (BigUint, BigUint, BigUint) {
 
 
 /// Generate n random numbers, each one is up to `length`
+///
+/// TODO : - Need doc
 #[inline]
 pub(crate) fn _RAND_IDX(cnt: &BigUint, length: usize) -> Vec<usize> {
 
@@ -92,6 +98,8 @@ pub(crate) fn _RAND_IDX(cnt: &BigUint, length: usize) -> Vec<usize> {
 
 
 /// Resolve large numbers into smaller numbers
+///
+/// TODO : - Need doc
 #[inline]
 pub(crate) fn _DIV_UNIT(unit: &BigUint, n: &mut BigUint) -> Vec<BigUint> {
 

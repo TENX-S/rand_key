@@ -126,30 +126,28 @@ impl RandPwd {
     }
 
 
-    /// Change the content of `RandPwd`, depend on the name of operation you passed.
-    /// There's two operations: **update** and **check**
+    /// Change the content of `RandPwd`, in the way of the name of operation.
+    /// There are two operations: **update** and **check**
     ///
-    /// update means just replace the value you've passed and update the counts field
+    /// * **update** : Replace the value you've passed and update the field.
     ///
-    /// check means if the counts field of new value doesn't match the old one, it will panic!
-    /// if checking passed, the old one will be replaced
+    /// * **check** : If the field of new value doesn't match the old one, it will return an `Err` value or the old `content` will be replaced.
     /// # Example
     ///
     /// Basic usage:
     /// ```
-    /// // update
     /// use rand_pwd::RandPwd;
     /// use num_traits::ToPrimitive;
     /// use num_bigint::BigUint;
+    ///
+    /// // update
     /// let mut r_p = RandPwd::new(10, 2, 3);
-    /// r_p.set_val("123456", "update");
-    /// assert_eq!(*r_p.get_cnt("ltr").unwrap(), BigUint::from(0_usize));
-    /// assert_eq!(*r_p.get_cnt("sbl").unwrap(), BigUint::from(0_usize));
-    /// assert_eq!(*r_p.get_cnt("num").unwrap(), BigUint::from(6_usize));
+    /// assert!(r_p.set_val("123456", "update").is_ok());
     ///
     /// // check
     /// let mut r_p = RandPwd::new(10, 2, 3);
-    /// // r_p.set_val("123456", "check"); // Will panic
+    /// assert!(r_p.set_val("]EH1zyqx3Bl/F8a", "check").is_ok());
+    /// assert!(r_p.set_val("123456", "check").is_err());
     /// ```
     #[inline]
     pub fn set_val(&mut self, val: &str, op: &str) -> Result<(), String> {
