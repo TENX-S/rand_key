@@ -5,70 +5,11 @@ pub use num_bigint::{ BigUint, ToBigUint };
 pub use num_traits::{ Zero, One, ToPrimitive };
 pub use std::{
     str::FromStr,
-    convert::From,
-    collections::HashSet,
     ops::{ Add, SubAssign, AddAssign, },
     fmt::{ Display, Formatter, Result, },
 };
 
 
-
-
-#[derive(Clone, Debug)]
-pub struct Data(Vec<Vec<String>>);
-
-
-impl Data {
-
-    #[inline]
-    pub fn inner(&self) -> &Vec<Vec<String>> {
-        &self.0
-    }
-
-
-    #[inline]
-    pub fn mut_inner(&mut self) -> &mut Vec<Vec<String>> {
-        &mut self.0
-    }
-
-
-    #[inline]
-    pub(crate) fn del(&mut self, chs: &[&str]) {
-
-        let mut chs = chs.into_iter().map(|ch| char::from_str(*ch).unwrap()).collect::<Vec<_>>();
-
-        chs.sort();
-        chs.dedup();
-
-        for ch in chs {
-
-            if !ch.is_ascii() {
-                panic!("Non-ASCII character: {:?}", ch);
-            }
-
-            if self.0.concat().contains(&ch.to_string()) {
-
-                let mut idx;
-
-                if ch.is_ascii_alphabetic() {
-                    idx = self.0[0].binary_search(&ch.to_string()).unwrap();
-                    self.0[0].remove(idx);
-                }
-                if ch.is_ascii_punctuation() {
-                    idx = self.0[1].binary_search(&ch.to_string()).unwrap();
-                    self.0[1].remove(idx);
-                }
-                if ch.is_ascii_digit() {
-                    idx = self.0[2].binary_search(&ch.to_string()).unwrap();
-                    self.0[2].remove(idx);
-                }
-            } else {
-                panic!("{:?} is not letters, punctuations or digits", ch);
-            }
-        }
-    }
-
-}
 
 
 /// Characters set
@@ -126,9 +67,10 @@ pub(crate) fn _CNT<T: AsRef<str>>(content: T) -> (usize, usize, usize) {
 
 }
 
-/// Generate n random numbers, each one is up to cnt
+
+/// Generate n random numbers, each one is up to `length`
 #[inline]
-pub(crate) fn _RAND_IDX(cnt: impl ToBigUint, length: usize) -> Vec<usize> {
+pub(crate) fn _RAND_IDX(cnt: &BigUint, length: usize) -> Vec<usize> {
 
     let mut n = cnt.to_biguint().unwrap();
     let mut idxs = Vec::with_capacity(n.to_usize().unwrap());
@@ -142,20 +84,21 @@ pub(crate) fn _RAND_IDX(cnt: impl ToBigUint, length: usize) -> Vec<usize> {
 
 }
 
+
 /// Resolve large numbers into smaller numbers
 #[inline]
-pub(crate) fn _DIV_UNIT(unit: usize, n: &mut BigUint) -> Vec<usize> {
+pub(crate) fn _DIV_UNIT(unit: &BigUint, n: &mut BigUint) -> Vec<BigUint> {
 
-    let UNIT: BigUint = unit.into();
+    let UNIT = unit.to_biguint().unwrap();
     let mut ret = Vec::with_capacity((n.clone() / &UNIT + BigUint::one()).to_usize().unwrap());
 
     loop {
         if n.clone() < UNIT {
-            ret.push(n.to_usize().unwrap());
+            ret.push(n.to_biguint().unwrap());
             break;
         } else {
             *n -= UNIT.clone();
-            ret.push(unit);
+            ret.push(UNIT.clone());
         }
     }
 
@@ -166,55 +109,31 @@ pub(crate) fn _DIV_UNIT(unit: usize, n: &mut BigUint) -> Vec<usize> {
 use crate::{ RandPwd, ToRandPwd };
 
 
-/// Generate random password but in the order like "letters->symbols->numbers"
-#[inline]
-pub(crate) fn _PWD(r_p: &mut RandPwd) -> String {
-    // TODO: - Improve readability
-
-    let unit = r_p._UNIT;
-    let data = &r_p._DATA.0;
-
-    vec![(&mut r_p.ltr_cnt, &data[0]),
-         (&mut r_p.sbl_cnt, &data[1]),
-         (&mut r_p.num_cnt, &data[2]),]
-        .into_iter()
-        .map(|(bignum, data)| {
-            _DIV_UNIT(unit, bignum)
-                .par_iter()
-                .map(|cnt| {
-                    _RAND_IDX(*cnt, data.len())
-                        .par_iter()
-                        // TODO: - Remove this `clone` which can cause huge overhead of both memory and CPU
-                        .map(|idx| data[*idx].clone())
-                        .collect::<String>()
-                })
-                .collect()
-        })
-        .collect::<Vec<Vec<_>>>()
-        .concat()
-        .join("")
-
-}
-
-
 impl Default for RandPwd {
 
     #[inline]
     fn default() -> Self {
-        RandPwd::new(0, 0, 0)
+        RandPwd {
+            ltr_cnt: Default::default(),
+            sbl_cnt: Default::default(),
+            num_cnt: Default::default(),
+            content: Default::default(),
+            UNIT: BigUint::one(),
+            DATA: _DATA(),
+        }
     }
 
 }
 
 
-impl Default for Data {
-
-    #[inline]
-    fn default() -> Self {
-        Data(_DATA())
-    }
-
-}
+// impl Default for Data {
+//
+//     #[inline]
+//     fn default() -> Self {
+//         Data(_DATA())
+//     }
+//
+// }
 
 
 impl Display for RandPwd {
@@ -253,12 +172,11 @@ impl Add for RandPwd {
             sbl_cnt: self.sbl_cnt + rhs.sbl_cnt,
             num_cnt: self.num_cnt + rhs.num_cnt,
             content: self.content + &rhs.content,
-            _UNIT: 1,
-            _DATA: Data::default(),
+            UNIT: self.UNIT,
+            DATA: Default::default(),
         }
     }
 }
-
 
 
 impl AddAssign for RandPwd {
@@ -313,12 +231,11 @@ impl From<&str> for RandPwd {
 
     #[inline]
     fn from(s: &str) -> Self {
-        let (ltr_cnt, sbl_cnt, num_cnt) = _CNT(s);
-        let mut r_p = RandPwd::new(ltr_cnt, sbl_cnt, num_cnt);
+        let mut r_p = RandPwd::default();
         r_p.set_val(s, "update");
-        r_p.set_unit(1);
 
         r_p
+
     }
 
 }
