@@ -46,6 +46,7 @@ mod prelude;
 use prelude::*;
 
 
+
 /// struct `RandPwd`
 #[derive(Clone, Debug)]
 pub struct RandPwd {
@@ -153,21 +154,24 @@ impl RandPwd {
     #[inline]
     pub fn set_val(&mut self, val: &str, op: &str) {
 
+        let (val_ltr_cnt, val_sbl_cnt, val_num_cnt) = _CNT(val);
+
         match op {
 
             "update" => {
-                self.ltr_cnt = _CNT(val).0.to_biguint().unwrap();
-                self.sbl_cnt = _CNT(val).1.to_biguint().unwrap();
-                self.num_cnt = _CNT(val).2.to_biguint().unwrap();
+                self.ltr_cnt = val_ltr_cnt;
+                self.sbl_cnt = val_sbl_cnt;
+                self.num_cnt = val_num_cnt;
 
                 self.content = val.into();
             },
 
             "check" => {
-                if (self.ltr_cnt.to_usize().unwrap(),
-                    self.sbl_cnt.to_usize().unwrap(),
-                    self.num_cnt.to_usize().unwrap(),) == _CNT(val) {
-
+                if (&self.ltr_cnt,
+                    &self.sbl_cnt,
+                    &self.num_cnt,) == (&val_ltr_cnt,
+                                        &val_sbl_cnt,
+                                        &val_num_cnt,) {
                     self.content = val.into();
                 } else {
                     panic!("The fields of {:?} is not right", val);
@@ -197,8 +201,17 @@ impl RandPwd {
     /// The value of UNIT is inversely proportional to memory overhead
     /// In order to reduce the memory overhead, raise the value of `UNIT`
     #[inline]
-    pub fn set_unit(&mut self, val: impl ToBigUint) {
-        self.UNIT = val.to_biguint().unwrap();
+    pub fn set_unit(&mut self, val: impl ToBigUint) -> Result<(), &str> {
+
+        let val = val.to_biguint().unwrap();
+
+        if val == BigUint::zero() {
+            Err("Unit is supposed to be positive")
+        } else {
+            self.UNIT = val;
+            Ok(())
+        }
+
     }
 
 

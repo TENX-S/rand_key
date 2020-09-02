@@ -6,7 +6,7 @@ pub use num_traits::{ Zero, One, ToPrimitive };
 pub use std::{
     str::FromStr,
     ops::{ Add, SubAssign, AddAssign, },
-    fmt::{ Display, Formatter, Result, },
+    fmt::{ self, Display, Formatter, },
 };
 
 
@@ -45,25 +45,38 @@ pub(crate) fn _DATA() -> Vec<Vec<String>> {
 
 /// Count the number of a string
 #[inline]
-pub(crate) fn _CNT<T: AsRef<str>>(content: T) -> (usize, usize, usize) {
+pub(crate) fn _CNT<T: AsRef<str>>(content: T) -> (BigUint, BigUint, BigUint) {
 
-    let mut l = 0;
-    let mut s = 0;
-    let mut n = 0;
+    use std::sync::Mutex;
 
-    content.as_ref().chars().for_each(
+    let l = Mutex::new(0);
+    let s = Mutex::new(0);
+    let n = Mutex::new(0);
+
+    content.as_ref().chars().collect::<Vec<_>>().par_iter().for_each(
         |x| {
             if x.is_ascii() {
-                if x.is_ascii_alphabetic()  { l += 1; }
-                if x.is_ascii_punctuation() { s += 1; }
-                if x.is_ascii_digit()       { n += 1; }
+                if x.is_ascii_alphabetic()  {
+                    let mut temp = l.lock().unwrap();
+                    *temp += 1;
+                }
+                if x.is_ascii_punctuation() {
+                    let mut temp = s.lock().unwrap();
+                    *temp += 1;
+                }
+                if x.is_ascii_digit()       {
+                    let mut temp = n.lock().unwrap();
+                    *temp += 1;
+                }
             } else {
                 panic!("Has non-ASCII character(s)!, the first one is: {:?}", x)
             }
         }
     );
 
-    (l, s, n)
+    (l.into_inner().unwrap().to_biguint().unwrap(),
+     s.into_inner().unwrap().to_biguint().unwrap(),
+     n.into_inner().unwrap().to_biguint().unwrap(),)
 
 }
 
@@ -139,7 +152,7 @@ impl Default for RandPwd {
 impl Display for RandPwd {
 
     #[inline]
-    fn fmt(&self, f: &mut Formatter) -> Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "\n{}\n", self.content)
     }
 
