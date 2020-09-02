@@ -68,15 +68,14 @@ fn main() {
 
     // Or you can build from an existing `&str`
     let mut r_p = RandPwd::from("=tE)n5f`sidR>BV"); // 10 letters, 4 symbols, 1 number 
-    // You can rebuild a random password and with equivalent amount of letters, symbols and numbers. Like below
+    // You can join a random password and with equivalent amount of letters, symbols and numbers again. Like below
     r_p.join();
     println!("{}", r_p); 
     // One possible output: qS`Xlyhpmg~"V8[
     
-    // All the `String` and `&str` has implemented trait `ToRandPwd`
-    // which means you can use method `to_randpwd` to convert a `String` or `&str` to `RandPwd`
+    // You can also use the method `to_randpwd` to convert a `String` or `&str` to `RandPwd`
     
-    let mut r_p = "n4jpstv$dI,.z'K".to_randpwd().unwrap();
+    let mut r_p = "n4jpstv$dI,.z'K".to_randpwd();
 
     // Panic! Has non-ASCII character(s)!
     // let mut r_p = RandPwd::from("🦀️🦀️🦀️"); 

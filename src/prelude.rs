@@ -1,7 +1,7 @@
 
-use crate::utils::*;
-use crate::{ RandPwd, ToRandPwd,};
-use std::{ops::{ Add, AddAssign, }, fmt::{ self, Display, Formatter, } };
+
+use crate::{ RandPwd, ToRandPwd, utils::{ One, _DATA, BigUint, } };
+use std::{ops::{ Add, AddAssign, }, fmt::{ self, Display, Formatter, }, };
 
 
 
@@ -108,8 +108,8 @@ impl AsRef<str> for RandPwd {
 impl<T: AsRef<str>> ToRandPwd for T {
 
     #[inline]
-    fn to_randpwd(&self) -> Option<RandPwd> {
-        Some(self.as_ref().into())
+    fn to_randpwd(&self) -> RandPwd {
+        self.as_ref().into()
     }
 
 }

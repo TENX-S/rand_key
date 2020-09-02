@@ -63,7 +63,7 @@ pub struct RandPwd {
 pub trait ToRandPwd {
 
     /// Converts the value of `self` to a `RandPwd`.
-    fn to_randpwd(&self) -> Option<RandPwd>;
+    fn to_randpwd(&self) -> RandPwd;
 
 }
 
@@ -171,6 +171,7 @@ impl RandPwd {
                     &self.num_cnt,) == (&val_ltr_cnt,
                                         &val_sbl_cnt,
                                         &val_num_cnt,) {
+
                     self.content = val.into();
 
                     Ok(())

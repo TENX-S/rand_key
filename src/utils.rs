@@ -13,9 +13,9 @@ pub use num_traits::{ Zero, One, ToPrimitive };
 #[inline]
 pub(crate) fn _DATA() -> Vec<Vec<String>> {
 
-    let mut letters = Vec::<String>::new();
-    let mut symbols = Vec::<String>::new();
-    let mut numbers = Vec::<String>::new();
+    let mut letters = Vec::new();
+    let mut symbols = Vec::new();
+    let mut numbers = Vec::new();
 
     let mut charset = vec![];
 
