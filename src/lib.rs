@@ -46,7 +46,6 @@ mod prelude;
 use prelude::*;
 
 
-
 /// struct `RandPwd`
 #[derive(Clone, Debug)]
 pub struct RandPwd {
@@ -54,8 +53,8 @@ pub struct RandPwd {
     sbl_cnt: BigUint,
     num_cnt: BigUint,
     content: String,
-    _UNIT: usize,    // TODO: - implement a smart _UNIT initialization to get the best performance
-    _DATA: Data,
+    UNIT: BigUint,    // TODO: - implement a smart UNIT initialization to get the best performance
+    DATA: Vec<Vec<String>>,
 }
 
 
@@ -104,8 +103,8 @@ impl RandPwd {
             sbl_cnt: sbl_cnt.to_biguint().unwrap(),
             num_cnt: num_cnt.to_biguint().unwrap(),
             content: String::new(),
-            _UNIT: 1,
-            _DATA: Data::default()
+            UNIT: BigUint::one(),
+            DATA: _DATA(),
         }
 
     }
@@ -190,54 +189,34 @@ impl RandPwd {
     /// assert_eq!(r_p.unit(), 1);
     /// ```
     #[inline]
-    pub fn unit(&self) -> usize {
-        self._UNIT
+    pub fn unit(&self) -> &BigUint {
+        &self.UNIT
     }
 
 
     /// The value of UNIT is inversely proportional to memory overhead
     /// In order to reduce the memory overhead, raise the value of `UNIT`
     #[inline]
-    pub fn set_unit(&mut self, val: usize) {
-        self._UNIT = val;
+    pub fn set_unit(&mut self, val: impl ToBigUint) {
+        self.UNIT = val.to_biguint().unwrap();
     }
 
 
-    /// Return the shared reference of `_DATA`
+    /// Return the shared reference of `DATA`
     #[inline]
-    pub fn data(&self) -> &Data {
-        &self._DATA
+    pub fn data(&self) -> &Vec<Vec<String>> {
+        &self.DATA
     }
 
-
-    /// Return the mutable reference of `_DATA`
-    #[inline]
-    pub fn mut_data(&mut self) -> &mut Data {
-        &mut self._DATA
-    }
-
-
-    /// Delete the character(s) you don't want see in the result
-    ///
-    /// # Example
-    ///
-    /// Basic Usage:
-    /// ```
-    /// use rand_pwd::RandPwd;
-    /// let mut r_p = RandPwd::new(1, 2, 3);
-    /// r_p.del(&["1", "2", "3", "4", "5", "6", "7", "8", "9"][..]);
-    /// r_p.join();
-    /// println!("{}", r_p);
-    /// ```
-    /// Output:
-    ///
-    /// `0"<00k`
-    #[inline]
-    pub fn del(&mut self, chs: &[&str]) {
-
-        self._DATA.del(chs);
-
-    }
+    /// Set the user-defined data
+    // #[inline]
+    // pub fn set_data<T: AsRef<str>>(&mut self, val: &[T]) -> result::Result<(), Box<dyn Error>> {
+    //
+    //     self.DATA = val.iter().map(|x| x.as_ref().to_string()).collect::<Vec<_>>();
+    //
+    //     Ok(())
+    //
+    // }
 
 
     /// Returns the length of this `RandPwd`, in both bytes and [char]s.
@@ -345,13 +324,38 @@ impl RandPwd {
     #[inline]
     pub fn join(&mut self) {
 
-        let mut PWD: String = _PWD(&mut self.clone());
+        let mut inner_r_p = self.clone();
+        let unit = &inner_r_p.UNIT;
+        let data = &inner_r_p.DATA;
+
+        // TODO: - Improve readability
+        let mut PWD
+                 =
+        vec![(&mut inner_r_p.ltr_cnt, &data[0]),
+             (&mut inner_r_p.sbl_cnt, &data[1]),
+             (&mut inner_r_p.num_cnt, &data[2]),]
+            .into_iter()
+            .map(|(bignum, data)| {
+                _DIV_UNIT(unit, bignum)
+                    .par_iter()
+                    .map(|cnt| {
+                        _RAND_IDX(cnt, data.len())
+                            .iter()
+                            // TODO: - Remove this `clone` which can cause huge overhead of both memory and CPU
+                            .map(|idx| data[*idx].clone())
+                            .collect::<String>()
+                    })
+                    .collect()
+            })
+            .collect::<Vec<Vec<_>>>()
+            .concat()
+            .join("");
+
         // This is absolutely safe, because they are all ASCII characters except control ones.
         let bytes = unsafe { PWD.as_bytes_mut() };
         bytes.shuffle(&mut thread_rng());
         self.content = bytes.par_iter().map(|s| *s as char).collect::<String>();
 
     }
-
 
 }
