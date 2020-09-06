@@ -53,16 +53,17 @@ pub(crate) fn _CNT<T: AsRef<str>>(content: T) -> (BigUint, BigUint, BigUint) {
     content.as_ref().chars().collect::<Vec<_>>().par_iter().for_each(
         |x| {
             if x.is_ascii() {
+                let mut temp;
                 if x.is_ascii_alphabetic()  {
-                    let mut temp = l.lock().unwrap();
+                    temp = l.lock().unwrap();
                     *temp += 1;
                 }
                 if x.is_ascii_punctuation() {
-                    let mut temp = s.lock().unwrap();
+                    temp = s.lock().unwrap();
                     *temp += 1;
                 }
                 if x.is_ascii_digit()       {
-                    let mut temp = n.lock().unwrap();
+                    temp = n.lock().unwrap();
                     *temp += 1;
                 }
             } else {

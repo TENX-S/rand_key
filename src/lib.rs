@@ -47,6 +47,7 @@ mod prelude;
 use utils::*;
 
 
+
 /// struct `RandPwd`
 #[derive(Clone, Debug)]
 pub struct RandPwd {
@@ -93,7 +94,7 @@ impl RandPwd {
     /// // You can also mix the `BigUint` with primitive type
     /// ```
     #[inline]
-    pub fn new<L, S, N>(ltr_cnt: L, sbl_cnt: S, num_cnt: N) -> Self
+    pub fn new<L, S, N>(ltr_cnt: &L, sbl_cnt: &S, num_cnt: &N) -> Self
     where L: ToBigUint,
           S: ToBigUint,
           N: ToBigUint,
@@ -131,7 +132,7 @@ impl RandPwd {
     ///
     /// * **update** : Replace the value you've passed and update the field.
     ///
-    /// * **check** : If the field of new value doesn't match the old one, it will return an `Err` value or the old `content` will be replaced.
+    /// * **check** : If the field of new value doesn't match the old one, it will return an `Err` or the old `content` will be replaced.
     /// # Example
     ///
     /// Basic usage:
@@ -175,6 +176,7 @@ impl RandPwd {
                     self.content = val.into();
 
                     Ok(())
+
                 } else {
                     Err(format!("The fields of {:?} is not right", val))
                 }
@@ -208,7 +210,7 @@ impl RandPwd {
         let val = val.to_biguint().unwrap();
 
         if val == BigUint::zero() {
-            Err("Unit is supposed to be positive")
+            Err("Unit can not be zero!")
         } else {
             self.UNIT = val;
             Ok(())
@@ -221,6 +223,49 @@ impl RandPwd {
     #[inline]
     pub fn data(&self) -> &Vec<Vec<String>> {
         &self.DATA
+    }
+
+
+    /// Replace the `data` of `RandPwd`
+    #[inline]
+    pub fn replace_data(&mut self, val: &[&str]) ->  Result<(), String> {
+
+
+
+        use std::str::FromStr;
+
+        if val
+            .iter()
+            .filter(|x| {
+                let x = char::from_str(**x).unwrap();
+                !(x.is_ascii_alphabetic() || x.is_ascii_punctuation() || x.is_ascii_digit())
+            })
+            .collect::<Vec<_>>().len() == 0 {
+
+            self.DATA = {
+
+                let mut ltr = vec![];
+                let mut sbl = vec![];
+                let mut num = vec![];
+
+                val.iter().for_each(|x| {
+                    let x = char::from_str(&x).unwrap();
+                    if x.is_ascii_alphabetic()  { ltr.push(x.to_string()); }
+                    if x.is_ascii_punctuation() { sbl.push(x.to_string()); }
+                    if x.is_ascii_digit()       { num.push(x.to_string()); }
+                });
+                // TODO : - Implement an error handling
+
+                vec![ltr, sbl, num]
+
+            };
+
+            Ok(())
+
+        } else {
+            Err("Has non ASCII character(s)".to_string())
+        }
+
     }
 
 
