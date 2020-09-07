@@ -42,7 +42,7 @@ pub(crate) fn _DATA() -> Vec<Vec<String>> {
 ///
 /// TODO : - Need doc
 #[inline]
-pub(crate) fn _CNT<T: AsRef<str>>(content: T) -> (BigUint, BigUint, BigUint) {
+pub(crate) fn _CNT(content: impl AsRef<str>) -> (BigUint, BigUint, BigUint) {
 
     use std::sync::Mutex;
 

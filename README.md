@@ -34,7 +34,7 @@ $ cargo run --release --example rpg_test 16 2 3
 $ cargo run --release --example rpg_test 200000 200 300
 
 # Larger and set the unit value
-$ cargo run --release --example rpg_test 100000000 0 0 100 
+$ cargo run --release --example rpg_test 100000000 0 0 100
 ```
 
 
@@ -67,20 +67,20 @@ fn main() {
     // One possible output: 7$pA7yMCw=2DPGN
 
     // Or you can build from an existing `&str`
-    let mut r_p = RandPwd::from("=tE)n5f`sidR>BV"); // 10 letters, 4 symbols, 1 number 
-    // You can join a random password and with equivalent amount of letters, symbols and numbers again. Like below
+    let mut r_p = RandPwd::from("=tE)n5f`sidR>BV"); // 10 letters, 4 symbols, 1 number
+    // You can re-generate a random password and with equivalent amount of letters, symbols and numbers. Like below:
     r_p.join();
-    println!("{}", r_p); 
+    println!("{}", r_p);
     // One possible output: qS`Xlyhpmg~"V8[
-    
+
     // You can also use the method `to_randpwd` to convert a `String` or `&str` to `RandPwd`
-    
+
     let mut r_p = "n4jpstv$dI,.z'K".to_randpwd();
 
     // Panic! Has non-ASCII character(s)!
-    // let mut r_p = RandPwd::from("🦀️🦀️🦀️"); 
-    // let mut r_p = "🦀️🦀️🦀️".to_randpwd(); 
-}   
+    // let mut r_p = RandPwd::from("🦀️🦀️🦀️");
+    // let mut r_p = "🦀️🦀️🦀️".to_randpwd();
+}
 ```
 
 

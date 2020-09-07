@@ -13,16 +13,17 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     if demands.is_empty() {
 
-        r_p = RandPwd::new(&10, &2, &3);
+        r_p = RandPwd::new(0, 0, 2);
+        r_p.replace_data(&["1", "2"])?;
         r_p.join();
+        println!("{:?}", r_p.data());
         println!("{}", r_p);
 
-
     } else {
-        
-        let ltr_cnt = &demands[0];
-        let sbl_cnt = &demands[1];
-        let num_cnt = &demands[2];
+
+        let ltr_cnt = demands[0].clone();
+        let sbl_cnt = demands[1].clone();
+        let num_cnt = demands[2].clone();
 
         r_p = RandPwd::new(ltr_cnt, sbl_cnt, num_cnt);
 

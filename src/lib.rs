@@ -14,7 +14,7 @@
 //!     // One possible output: qS`Xlyhpmg~"V8[
 //!     // All the `String` and `&str` has implemented trait `ToRandPwd`
 //!     // which means you can use method `to_randpwd` to convert a `String` or `&str` to `RandPwd`
-//!     let mut r_p = "n4jpstv$dI,.z'K".to_randpwd().unwrap();
+//!     let mut r_p = "n4jpstv$dI,.z'K".to_randpwd();
 //!     // Panic! Has non-ASCII character(s)!
 //!     // let mut r_p = RandPwd::from("🦀️🦀️🦀️");
 //!     // let mut r_p = "🦀️🦀️🦀️".to_randpwd();
@@ -94,7 +94,7 @@ impl RandPwd {
     /// // You can also mix the `BigUint` with primitive type
     /// ```
     #[inline]
-    pub fn new<L, S, N>(ltr_cnt: &L, sbl_cnt: &S, num_cnt: &N) -> Self
+    pub fn new<L, S, N>(ltr_cnt: L, sbl_cnt: S, num_cnt: N) -> Self
     where L: ToBigUint,
           S: ToBigUint,
           N: ToBigUint,
@@ -192,9 +192,11 @@ impl RandPwd {
     ///
     /// Basic Usage:
     /// ```
+    /// use num_traits::One;
     /// use rand_pwd::RandPwd;
+    /// use num_bigint::BigUint;
     /// let r_p = RandPwd::new(10, 2, 3); // The default value of unit is 1
-    /// assert_eq!(r_p.unit(), 1);
+    /// assert_eq!(r_p.unit().clone(), BigUint::one());
     /// ```
     #[inline]
     pub fn unit(&self) -> &BigUint {
@@ -228,16 +230,14 @@ impl RandPwd {
 
     /// Replace the `data` of `RandPwd`
     #[inline]
-    pub fn replace_data(&mut self, val: &[&str]) ->  Result<(), String> {
-
-
+    pub fn replace_data(&mut self, val: &[impl AsRef<str>]) ->  Result<(), String> {
 
         use std::str::FromStr;
 
         if val
             .iter()
             .filter(|x| {
-                let x = char::from_str(**x).unwrap();
+                let x = char::from_str(x.as_ref()).unwrap();
                 !(x.is_ascii_alphabetic() || x.is_ascii_punctuation() || x.is_ascii_digit())
             })
             .collect::<Vec<_>>().len() == 0 {
@@ -249,10 +249,10 @@ impl RandPwd {
                 let mut num = vec![];
 
                 val.iter().for_each(|x| {
-                    let x = char::from_str(&x).unwrap();
-                    if x.is_ascii_alphabetic()  { ltr.push(x.to_string()); }
-                    if x.is_ascii_punctuation() { sbl.push(x.to_string()); }
-                    if x.is_ascii_digit()       { num.push(x.to_string()); }
+                    let x = char::from_str(x.as_ref()).unwrap();
+                    if x.is_ascii_alphabetic()  { ltr.push(x.into()); }
+                    if x.is_ascii_punctuation() { sbl.push(x.into()); }
+                    if x.is_ascii_digit()       { num.push(x.into()); }
                 });
                 // TODO : - Implement an error handling
 
@@ -263,7 +263,7 @@ impl RandPwd {
             Ok(())
 
         } else {
-            Err("Has non ASCII character(s)".to_string())
+            Err("Has non ASCII character(s)".into())
         }
 
     }
@@ -346,7 +346,7 @@ impl RandPwd {
     /// // Output: +iQiQGSXl(nv
     /// ```
     #[inline]
-    pub fn set_cnt<T: ToBigUint>(&mut self, kind: &str, val: T) -> Option<()> {
+    pub fn set_cnt(&mut self, kind: &str, val: impl ToBigUint) -> Option<()> {
 
         match kind {
 
