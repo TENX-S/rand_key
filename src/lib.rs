@@ -35,7 +35,7 @@
 //! And we just need to hand this sequence to [rayon](https://github.com/rayon-rs/rayon) for processing.
 //! But the disadvantages are also obvious, if `UNIT` number is too small, like default value: 1,
 //! then capcity of the `Vec` is 1M at least!
-//! It will take up huge even all RAM and may harm your computer.
+//! It will take up huge even all RAM and may harm your computer. **So `RandPwd::set_unit()` is unsafe**
 //! In the next version, there will be a smart `UNIT` value to fix this problem.
 
 
@@ -45,6 +45,7 @@ mod utils;
 mod prelude;
 
 use utils::*;
+
 
 
 
@@ -204,10 +205,9 @@ impl RandPwd {
     }
 
 
-    /// The value of UNIT is inversely proportional to memory overhead
-    /// In order to reduce the memory overhead, raise the value of `UNIT`
+    /// [set a right `UNIT` number](https://docs.rs/rand_pwd/1.1.3/rand_pwd/#the-unit-field).
     #[inline]
-    pub fn set_unit(&mut self, val: impl ToBigUint) -> Result<(), &str> {
+    pub unsafe fn set_unit(&mut self, val: impl ToBigUint) -> Result<(), &str> {
 
         let val = val.to_biguint().unwrap();
 
@@ -228,19 +228,21 @@ impl RandPwd {
     }
 
 
-    /// Replace the `data` of `RandPwd`
+    /// Return a new `RandPwd` which has the replaced data
     #[inline]
     pub fn replace_data(&mut self, val: &[impl AsRef<str>]) ->  Result<(), String> {
 
         use std::str::FromStr;
 
         if val
-            .iter()
-            .filter(|x| {
-                let x = char::from_str(x.as_ref()).unwrap();
-                !(x.is_ascii_alphabetic() || x.is_ascii_punctuation() || x.is_ascii_digit())
-            })
-            .collect::<Vec<_>>().len() == 0 {
+             .iter()
+             .filter(|x| {
+                 let x = char::from_str(x.as_ref()).unwrap();
+                 !(x.is_ascii_alphabetic()  ||
+                   x.is_ascii_punctuation() ||
+                   x.is_ascii_digit())
+             })
+             .collect::<Vec<_>>().len().is_zero() {
 
             self.DATA = {
 
@@ -254,7 +256,18 @@ impl RandPwd {
                     if x.is_ascii_punctuation() { sbl.push(x.into()); }
                     if x.is_ascii_digit()       { num.push(x.into()); }
                 });
-                // TODO : - Implement an error handling
+
+                if !self.ltr_cnt.is_zero() && ltr.len().is_zero() {
+                    return Err(String::from("Expect some letters in replaced data!"));
+                }
+
+                if !self.sbl_cnt.is_zero() && sbl.len().is_zero() {
+                    return Err(String::from("Expect some symbols in replaced data!"));
+                }
+
+                if !self.num_cnt.is_zero() && ltr.len().is_zero() {
+                    return Err(String::from("Expect some numbers in replaced data!"));
+                }
 
                 vec![ltr, sbl, num]
 
@@ -310,11 +323,11 @@ impl RandPwd {
 
         match kind {
 
-            "ltr" => Some(&self.ltr_cnt),
-            "sbl" => Some(&self.sbl_cnt),
-            "num" => Some(&self.num_cnt),
+            "L" => Some(&self.ltr_cnt),
+            "S" => Some(&self.sbl_cnt),
+            "N" => Some(&self.num_cnt),
 
-            _   => None,
+             _  => None,
         }
     }
 
@@ -346,18 +359,17 @@ impl RandPwd {
     /// // Output: +iQiQGSXl(nv
     /// ```
     #[inline]
-    pub fn set_cnt(&mut self, kind: &str, val: impl ToBigUint) -> Option<()> {
+    pub fn set_cnt(&mut self, kind: &str, val: impl ToBigUint) -> Result<(), String> {
 
         match kind {
 
-            "ltr" => self.ltr_cnt = val.to_biguint()?,
-            "sbl" => self.sbl_cnt = val.to_biguint()?,
-            "num" => self.num_cnt = val.to_biguint()?,
+            "L" => { self.ltr_cnt = val.to_biguint().unwrap(); Ok(()) },
+            "S" => { self.sbl_cnt = val.to_biguint().unwrap(); Ok(()) },
+            "N" => { self.num_cnt = val.to_biguint().unwrap(); Ok(()) },
 
-            _     => (),
+             _  => Err(String::from("No such kind of field in RandPwd!")),
         }
 
-        Some(())
     }
 
 

@@ -5,6 +5,7 @@ use std::{ env, error::Error };
 
 
 
+
 fn main() -> Result<(), Box<dyn Error>> {
 
     let demands = env::args().skip(1).map(|arg| arg.parse::<BigUint>().unwrap()).collect::<Vec<_>>();
@@ -13,10 +14,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     if demands.is_empty() {
 
-        r_p = RandPwd::new(0, 0, 2);
-        r_p.replace_data(&["1", "2"])?;
+        r_p = RandPwd::new(10, 2, 3);
+        r_p.replace_data(&["1", "2", "3", "4", "a", "-"])?;
         r_p.join();
-        println!("{:?}", r_p.data());
         println!("{}", r_p);
 
     } else {
@@ -29,7 +29,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         if demands.len() == 4 {
             let unit = demands[3].clone();
-            r_p.set_unit(unit)?;
+            unsafe { r_p.set_unit(unit)?; }
         }
 
         r_p.join();

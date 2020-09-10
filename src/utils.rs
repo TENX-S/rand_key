@@ -40,7 +40,7 @@ pub(crate) fn _DATA() -> Vec<Vec<String>> {
 
 /// Count the fields of `RandPwd` in a string
 ///
-/// TODO : - Need doc
+/// The `_CNT("ab123_c53")` returns `(3, 5, 1)`
 #[inline]
 pub(crate) fn _CNT(content: impl AsRef<str>) -> (BigUint, BigUint, BigUint) {
 

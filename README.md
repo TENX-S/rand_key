@@ -84,8 +84,5 @@ fn main() {
 ```
 
 
-## Contribution
-Any PR is welcome!
-
 ## LICENSE
 MIT
