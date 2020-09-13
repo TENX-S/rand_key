@@ -5,7 +5,7 @@
 
 ## What
 
-Generate random password in handy way.
+Generate random password in handy way. 
 
 
 ## Why
