@@ -57,29 +57,29 @@ rand_pwd = { git = "https://github.com/TENX-S/rand_key", branch = "master" }
 
 Here's the simply demo of partital API:
 ```rust
-use rand_pwd::{ RandPwd, ToRandPwd };
+use rand_key::{ RandKey, ToRandKey };
 
 fn main() {
 
-    let mut r_p = RandPwd::new(10, 2, 3); // For now, it's empty. Use method `join` to generate the password
+    let mut r_p = RandKey::new(10, 2, 3); // For now, it's empty. Use method `join` to generate the key
     r_p.join();                           // Now `r_p` has some content, be kept in its `content` field
     println!("{}", r_p);                  // Print it on the screen
     // One possible output: 7$pA7yMCw=2DPGN
 
     // Or you can build from an existing `&str`
-    let mut r_p = RandPwd::from("=tE)n5f`sidR>BV"); // 10 letters, 4 symbols, 1 number
-    // You can re-generate a random password and with equivalent amount of letters, symbols and numbers. Like below:
+    let mut r_p = RandKey::from("=tE)n5f`sidR>BV"); // 10 letters, 4 symbols, 1 number
+    // You can re-generate a random key and with equivalent amount of letters, symbols and numbers. Like below:
     r_p.join();
     println!("{}", r_p);
     // One possible output: qS`Xlyhpmg~"V8[
 
-    // You can also use the method `to_randpwd` to convert a `String` or `&str` to `RandPwd`
+    // You can also use the method `to_randkey` to convert a `String` or `&str` to `RandPwd`
 
-    let mut r_p = "n4jpstv$dI,.z'K".to_randpwd();
+    let mut r_p = "n4jpstv$dI,.z'K".to_randkey();
 
     // Panic! Has non-ASCII character(s)!
     // let mut r_p = RandPwd::from("🦀️🦀️🦀️");
-    // let mut r_p = "🦀️🦀️🦀️".to_randpwd();
+    // let mut r_p = "🦀️🦀️🦀️".to_randkey();
 }
 ```
 
