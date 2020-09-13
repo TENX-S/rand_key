@@ -5,7 +5,7 @@
 
 ## What
 
-This is a crate about generate random passwords.
+Generate random password in handy way.
 
 
 ## Why
