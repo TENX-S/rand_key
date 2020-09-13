@@ -1,5 +1,5 @@
 
-use rand_pwd::RandPwd;
+use rand_key::RandKey;
 use num_bigint::BigUint;
 use std::{ env, error::Error };
 
@@ -14,7 +14,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     if demands.is_empty() {
 
-        r_p = RandPwd::new(10, 2, 3);
+        r_p = RandKey::new(10, 2, 3);
         r_p.replace_data(&["1", "2", "3", "4", "a", "-"])?;
         r_p.join();
         println!("{}", r_p);
@@ -25,7 +25,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         let sbl_cnt = demands[1].clone();
         let num_cnt = demands[2].clone();
 
-        r_p = RandPwd::new(ltr_cnt, sbl_cnt, num_cnt);
+        r_p = RandKey::new(ltr_cnt, sbl_cnt, num_cnt);
 
         if demands.len() == 4 {
             let unit = demands[3].clone();

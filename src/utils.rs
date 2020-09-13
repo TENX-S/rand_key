@@ -38,7 +38,7 @@ pub(crate) fn _DATA() -> Vec<Vec<String>> {
 }
 
 
-/// Count the fields of `RandPwd` in a string
+/// Count the fields of `RandKey` in a string
 ///
 /// The `_CNT("ab123_c53")` returns `(3, 5, 1)`
 #[inline]

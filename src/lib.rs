@@ -1,23 +1,23 @@
 //! # Usage:
 //! ```rust
-//! use rand_pwd::{ RandPwd, ToRandPwd };
+//! use rand_key::{ RandKey, ToRandKey };
 //! fn main() {
-//!     let mut r_p = RandPwd::new(10, 2, 3); // For now, it's empty. Use method `join` to generate the password
+//!     let mut r_p = RandKey::new(10, 2, 3); // For now, it's empty. Use method `join` to generate the password
 //!     r_p.join();                           // Now `r_p` has some content, be kept in its `content` field
 //!     println!("{}", r_p);                  // Print it on the screen
 //!     // One possible output: 7$pA7yMCw=2DPGN
 //!     // Or you can build from an existing `&str`
-//!     let mut r_p = RandPwd::from("=tE)n5f`sidR>BV"); // 10 letters, 4 symbols, 1 number
+//!     let mut r_p = RandKey::from("=tE)n5f`sidR>BV"); // 10 letters, 4 symbols, 1 number
 //!     // You can rebuild a random password and with equivalent amount of letters, symbols and numbers. Like below
 //!     r_p.join();
 //!     println!("{}", r_p);
 //!     // One possible output: qS`Xlyhpmg~"V8[
-//!     // All the `String` and `&str` has implemented trait `ToRandPwd`
-//!     // which means you can use method `to_randpwd` to convert a `String` or `&str` to `RandPwd`
-//!     let mut r_p = "n4jpstv$dI,.z'K".to_randpwd();
+//!     // All the `String` and `&str` has implemented trait `ToRandKey`
+//!     // which means you can use method `to_RandKey` to convert a `String` or `&str` to `RandKey`
+//!     let mut r_p = "n4jpstv$dI,.z'K".to_randkey();
 //!     // Panic! Has non-ASCII character(s)!
-//!     // let mut r_p = RandPwd::from("🦀️🦀️🦀️");
-//!     // let mut r_p = "🦀️🦀️🦀️".to_randpwd();
+//!     // let mut r_p = RandKey::from("🦀️🦀️🦀️");
+//!     // let mut r_p = "🦀️🦀️🦀️".to_RandKey();
 //! }
 //! ```
 //! # The `UNIT` field
@@ -35,7 +35,7 @@
 //! And we just need to hand this sequence to [rayon](https://github.com/rayon-rs/rayon) for processing.
 //! But the disadvantages are also obvious, if `UNIT` number is too small, like default value: 1,
 //! then capcity of the `Vec` is 1M at least!
-//! It will take up huge even all RAM and may harm your computer. **So `RandPwd::set_unit()` is unsafe**
+//! It will take up huge even all RAM and may harm your computer. **So `RandKey::set_unit()` is unsafe**
 //! In the next version, there will be a smart `UNIT` value to fix this problem.
 
 
@@ -49,9 +49,9 @@ use utils::*;
 
 
 
-/// struct `RandPwd`
+/// struct `RandKey`
 #[derive(Clone, Debug)]
-pub struct RandPwd {
+pub struct RandKey {
     ltr_cnt: BigUint,
     sbl_cnt: BigUint,
     num_cnt: BigUint,
@@ -61,26 +61,26 @@ pub struct RandPwd {
 }
 
 
-/// A generic trait for converting a value to a `RandPwd`.
-pub trait ToRandPwd {
+/// A generic trait for converting a value to a `RandKey`.
+pub trait ToRandKey {
 
-    /// Converts the value of `self` to a `RandPwd`.
-    fn to_randpwd(&self) -> RandPwd;
+    /// Converts the value of `self` to a `RandKey`.
+    fn to_randkey(&self) -> RandKey;
 
 }
 
 
-impl RandPwd {
+impl RandKey {
 
 
-    /// Return an empty instance of `Result<RandPwd, &'static str>`
+    /// Return an empty instance of `Result<RandKey, &'static str>`
     /// # Example
     ///
     /// Basic usage:
     /// ```
-    /// use rand_pwd::RandPwd;
+    /// use rand_key::RandKey;
     /// use num_bigint::BigUint;
-    /// let mut r_p = RandPwd::new(11, 4, 2);
+    /// let mut r_p = RandKey::new(11, 4, 2);
     ///
     /// // If you want push a large number in it
     /// // parse the `&str` into `BigUint`
@@ -90,7 +90,7 @@ impl RandPwd {
     /// let sbl_cnt = BigUint::from_str(&format!("{}000", usize::MAX)).unwrap();
     /// let num_cnt = BigUint::from_str(&format!("{}000", usize::MAX)).unwrap();
     ///
-    /// r_p = RandPwd::new(ltr_cnt, sbl_cnt, num_cnt);
+    /// r_p = RandKey::new(ltr_cnt, sbl_cnt, num_cnt);
     ///
     /// // You can also mix the `BigUint` with primitive type
     /// ```
@@ -101,7 +101,7 @@ impl RandPwd {
           N: ToBigUint,
     {
 
-        RandPwd {
+        RandKey {
             ltr_cnt: ltr_cnt.to_biguint().unwrap(),
             sbl_cnt: sbl_cnt.to_biguint().unwrap(),
             num_cnt: num_cnt.to_biguint().unwrap(),
@@ -118,8 +118,8 @@ impl RandPwd {
     ///
     /// Basic usage:
     /// ```
-    /// use rand_pwd::RandPwd;
-    /// let r_p = RandPwd::new(10, 2, 3);
+    /// use rand_key::RandKey;
+    /// let r_p = RandKey::new(10, 2, 3);
     /// assert_eq!("", r_p.val())
     /// ```
     #[inline]
@@ -128,7 +128,7 @@ impl RandPwd {
     }
 
 
-    /// Change the content of `RandPwd`, in the way of the name of operation.
+    /// Change the content of `RandKey`, in the way of the name of operation.
     /// There are two operations: **update** and **check**
     ///
     /// * **update** : Replace the value you've passed and update the field.
@@ -138,16 +138,16 @@ impl RandPwd {
     ///
     /// Basic usage:
     /// ```
-    /// use rand_pwd::RandPwd;
+    /// use rand_key::RandKey;
     /// use num_traits::ToPrimitive;
     /// use num_bigint::BigUint;
     ///
     /// // update
-    /// let mut r_p = RandPwd::new(10, 2, 3);
+    /// let mut r_p = RandKey::new(10, 2, 3);
     /// assert!(r_p.set_val("123456", "update").is_ok());
     ///
     /// // check
-    /// let mut r_p = RandPwd::new(10, 2, 3);
+    /// let mut r_p = RandKey::new(10, 2, 3);
     /// assert!(r_p.set_val("]EH1zyqx3Bl/F8a", "check").is_ok());
     /// assert!(r_p.set_val("123456", "check").is_err());
     /// ```
@@ -194,9 +194,9 @@ impl RandPwd {
     /// Basic Usage:
     /// ```
     /// use num_traits::One;
-    /// use rand_pwd::RandPwd;
+    /// use rand_key::RandKey;
     /// use num_bigint::BigUint;
-    /// let r_p = RandPwd::new(10, 2, 3); // The default value of unit is 1
+    /// let r_p = RandKey::new(10, 2, 3); // The default value of unit is 1
     /// assert_eq!(r_p.unit().clone(), BigUint::one());
     /// ```
     #[inline]
@@ -205,7 +205,7 @@ impl RandPwd {
     }
 
 
-    /// [set a right `UNIT` number](https://docs.rs/rand_pwd/1.1.3/rand_pwd/#the-unit-field).
+    /// [set a right `UNIT` number](https://docs.rs/rand_key/1.1.3/rand_key/#the-unit-field).
     #[inline]
     pub unsafe fn set_unit(&mut self, val: impl ToBigUint) -> Result<(), &str> {
 
@@ -228,7 +228,7 @@ impl RandPwd {
     }
 
 
-    /// Return a new `RandPwd` which has the replaced data
+    /// Return a new `RandKey` which has the replaced data
     #[inline]
     pub fn replace_data(&mut self, val: &[impl AsRef<str>]) ->  Result<(), String> {
 
@@ -282,13 +282,13 @@ impl RandPwd {
     }
 
 
-    /// Returns the length of this `RandPwd`, in both bytes and [char]s.
+    /// Returns the length of this `RandKey`, in both bytes and [char]s.
     /// # Example
     ///
     /// Basic usage:
     /// ```
-    /// use rand_pwd::RandPwd;
-    /// let mut r_p = RandPwd::new(10, 2, 3);
+    /// use rand_key::RandKey;
+    /// let mut r_p = RandKey::new(10, 2, 3);
     /// r_p.join();
     /// assert_eq!(r_p.len(), 15);
     /// ```
@@ -299,24 +299,24 @@ impl RandPwd {
     }
 
 
-    /// Returns true if this `RandPwd` has a length of zero, and false otherwise.
+    /// Returns true if this `RandKey` has a length of zero, and false otherwise.
     #[inline]
     pub fn is_empty(&self) -> bool {
         self.content.is_empty()
     }
 
 
-    /// Get count of `RandPwd`
+    /// Get count of `RandKey`
     /// # Example
     ///
     /// Basic usage:
     /// ```
-    /// use rand_pwd::RandPwd;
+    /// use rand_key::RandKey;
     /// use num_traits::ToPrimitive;
-    /// let r_p = RandPwd::new(10, 2, 3);
-    /// assert_eq!(r_p.get_cnt("ltr").unwrap().to_usize().unwrap(), 10);
-    /// assert_eq!(r_p.get_cnt("sbl").unwrap().to_usize().unwrap(), 2);
-    /// assert_eq!(r_p.get_cnt("num").unwrap().to_usize().unwrap(), 3);
+    /// let r_p = RandKey::new(10, 2, 3);
+    /// assert_eq!(r_p.get_cnt("L").unwrap().to_usize().unwrap(), 10);
+    /// assert_eq!(r_p.get_cnt("S").unwrap().to_usize().unwrap(), 2);
+    /// assert_eq!(r_p.get_cnt("N").unwrap().to_usize().unwrap(), 3);
     /// ```
     #[inline]
     pub fn get_cnt(&self, kind: &str) -> Option<&BigUint> {
@@ -332,13 +332,13 @@ impl RandPwd {
     }
 
 
-    /// Change the count of letters, symbols or numbers of `RandPwd`
+    /// Change the count of letters, symbols or numbers of `RandKey`
     /// # Example
     ///
     /// Basic usage:
     /// ```
-    /// use rand_pwd::*;
-    /// let mut r_p = RandPwd::new(10, 2, 3);
+    /// use rand_key::*;
+    /// let mut r_p = RandKey::new(10, 2, 3);
     ///
     /// // Set the letter's count
     /// r_p.set_cnt("ltr", 0);
@@ -367,19 +367,19 @@ impl RandPwd {
             "S" => { self.sbl_cnt = val.to_biguint().unwrap(); Ok(()) },
             "N" => { self.num_cnt = val.to_biguint().unwrap(); Ok(()) },
 
-             _  => Err(String::from("No such kind of field in RandPwd!")),
+             _  => Err(String::from("No such kind of field in RandKey!")),
         }
 
     }
 
 
-    /// Generate the password for `RandPwd`
+    /// Generate the password for `RandKey`
     /// # Example
     ///
     /// Basic usage:
     /// ```
-    /// use rand_pwd::RandPwd;
-    /// let mut r_p = RandPwd::new(10, 2, 3);
+    /// use rand_key::RandKey;
+    /// let mut r_p = RandKey::new(10, 2, 3);
     /// r_p.join();
     /// println!("{}", r_p);
     /// ```

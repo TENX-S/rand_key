@@ -1,17 +1,17 @@
 
 
-use crate::{ RandPwd, ToRandPwd, utils::{ One, _DATA, BigUint, } };
+use crate::{ RandKey, ToRandKey, utils::{ One, _DATA, BigUint, } };
 use std::{ ops::{ Add, AddAssign, }, fmt::{ self, Display, Formatter, }, };
 
 
 
 
-impl Default for RandPwd {
+impl Default for RandKey {
 
-    /// The default value of `RandPwd`
+    /// The default value of `RandKey`
     #[inline]
     fn default() -> Self {
-        RandPwd {
+        RandKey {
             ltr_cnt: Default::default(),
             sbl_cnt: Default::default(),
             num_cnt: Default::default(),
@@ -24,7 +24,7 @@ impl Default for RandPwd {
 }
 
 
-impl Display for RandPwd {
+impl Display for RandKey {
 
     #[inline]
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
@@ -34,7 +34,7 @@ impl Display for RandPwd {
 }
 
 
-impl Add for RandPwd {
+impl Add for RandKey {
 
     type Output = Self;
 
@@ -42,20 +42,20 @@ impl Add for RandPwd {
     ///
     /// Basic Usage:
     /// ```
-    /// use rand_pwd::RandPwd;
+    /// use rand_key::RandKey;
     /// use num_bigint::BigUint;
-    /// let mut r0 = RandPwd::new(1, 2, 3);
-    /// let mut r1 = RandPwd::new(4, 5, 6);
+    /// let mut r0 = RandKey::new(1, 2, 3);
+    /// let mut r1 = RandKey::new(4, 5, 6);
     /// let mut r2 = r0 + r1;
     ///
-    /// assert_eq!(*r2.get_cnt("ltr").unwrap(), BigUint::from(5_usize));
-    /// assert_eq!(*r2.get_cnt("sbl").unwrap(), BigUint::from(7_usize));
-    /// assert_eq!(*r2.get_cnt("num").unwrap(), BigUint::from(9_usize));
+    /// assert_eq!(*r2.get_cnt("L").unwrap(), BigUint::from(5_usize));
+    /// assert_eq!(*r2.get_cnt("S").unwrap(), BigUint::from(7_usize));
+    /// assert_eq!(*r2.get_cnt("N").unwrap(), BigUint::from(9_usize));
     ///
     /// ```
     #[inline]
     fn add(self, rhs: Self) -> Self {
-        RandPwd {
+        RandKey {
             ltr_cnt: self.ltr_cnt + rhs.ltr_cnt,
             sbl_cnt: self.sbl_cnt + rhs.sbl_cnt,
             num_cnt: self.num_cnt + rhs.num_cnt,
@@ -67,20 +67,20 @@ impl Add for RandPwd {
 }
 
 
-impl AddAssign for RandPwd {
+impl AddAssign for RandKey {
 
     /// # Example
     ///
     /// Basic Usage:
     /// ```
-    /// use rand_pwd::RandPwd;
+    /// use rand_key::RandKey;
     /// use num_bigint::BigUint;
-    /// let mut r0 = RandPwd::new(1, 2, 3);
-    /// let mut r1 = RandPwd::new(4, 5, 6);
+    /// let mut r0 = RandKey::new(1, 2, 3);
+    /// let mut r1 = RandKey::new(4, 5, 6);
     /// r0 += r1;
-    /// assert_eq!(*r0.get_cnt("ltr").unwrap(), BigUint::from(5_usize));
-    /// assert_eq!(*r0.get_cnt("sbl").unwrap(), BigUint::from(7_usize));
-    /// assert_eq!(*r0.get_cnt("num").unwrap(), BigUint::from(9_usize));
+    /// assert_eq!(*r0.get_cnt("L").unwrap(), BigUint::from(5_usize));
+    /// assert_eq!(*r0.get_cnt("S").unwrap(), BigUint::from(7_usize));
+    /// assert_eq!(*r0.get_cnt("N").unwrap(), BigUint::from(9_usize));
     ///
     /// ```
     #[inline]
@@ -95,7 +95,7 @@ impl AddAssign for RandPwd {
 }
 
 
-impl AsRef<str> for RandPwd {
+impl AsRef<str> for RandKey {
 
     #[inline]
     fn as_ref(&self) -> &str {
@@ -105,21 +105,21 @@ impl AsRef<str> for RandPwd {
 }
 
 
-impl<T: AsRef<str>> ToRandPwd for T {
+impl<T: AsRef<str>> ToRandKey for T {
 
     #[inline]
-    fn to_randpwd(&self) -> RandPwd {
+    fn to_randkey(&self) -> RandKey {
         self.as_ref().into()
     }
 
 }
 
 
-impl From<&str> for RandPwd {
+impl From<&str> for RandKey {
 
     #[inline]
     fn from(s: &str) -> Self {
-        let mut r_p = RandPwd::default();
+        let mut r_p = RandKey::default();
         r_p.set_val(s, "update").unwrap();
 
         r_p

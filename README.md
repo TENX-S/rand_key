@@ -1,11 +1,11 @@
-# Random password generator
+# Random key generator
 
 
 
 
 ## What
 
-Generate random password in handy way. 
+Generate random keys in handy way. 
 
 
 ## Why
@@ -21,20 +21,20 @@ Rust 1.39 or higher.
 ## Try it
 
 ```shell script
-$ git clone https://github.com/TENX-S/rand_pwd
-$ cd rand_pwd
+$ git clone https://github.com/TENX-S/rand_key
+$ cd rand_key
 
 # Default case: amount of letters: 10, symbols: 2, numbers: 3
-$ cargo run --release --example rpg_test
+$ cargo run --release --example kg_test
 
 # Specify the parameter: amount of letters: 16, symbols: 2, numbers: 3
-$ cargo run --release --example rpg_test 16 2 3
+$ cargo run --release --example kg_test 16 2 3
 
 # Try a larger number!
-$ cargo run --release --example rpg_test 200000 200 300
+$ cargo run --release --example kg_test 200000 200 300
 
 # Larger and set the unit value
-$ cargo run --release --example rpg_test 100000000 0 0 100
+$ cargo run --release --example kg_test 100000000 0 0 100
 ```
 
 
@@ -52,7 +52,7 @@ rand_pwd = "1"
 
 You may want to use the latest feature(not stable and may requires nightly Rust):
 ```toml
-rand_pwd = { git = "https://github.com/TENX-S/rand_pwd", branch = "master" }
+rand_pwd = { git = "https://github.com/TENX-S/rand_key", branch = "master" }
 ```
 
 Here's the simply demo of partital API:
