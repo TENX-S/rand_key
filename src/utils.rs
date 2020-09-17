@@ -44,7 +44,7 @@ pub(crate) fn _DATA() -> Vec<Vec<String>> {
 #[inline]
 pub(crate) fn _CNT(content: impl AsRef<str>) -> (BigUint, BigUint, BigUint) {
 
-    use std::sync::Mutex;
+    use parking_lot::Mutex;
 
     let l = Mutex::new(0);
     let s = Mutex::new(0);
@@ -55,15 +55,15 @@ pub(crate) fn _CNT(content: impl AsRef<str>) -> (BigUint, BigUint, BigUint) {
             if x.is_ascii() {
                 let mut temp;
                 if x.is_ascii_alphabetic()  {
-                    temp = l.lock().unwrap();
+                    temp = l.lock();
                     *temp += 1;
                 }
                 if x.is_ascii_punctuation() {
-                    temp = s.lock().unwrap();
+                    temp = s.lock();
                     *temp += 1;
                 }
                 if x.is_ascii_digit()       {
-                    temp = n.lock().unwrap();
+                    temp = n.lock();
                     *temp += 1;
                 }
             } else {
@@ -72,9 +72,9 @@ pub(crate) fn _CNT(content: impl AsRef<str>) -> (BigUint, BigUint, BigUint) {
         }
     );
 
-    (l.into_inner().unwrap().to_biguint().unwrap(),
-     s.into_inner().unwrap().to_biguint().unwrap(),
-     n.into_inner().unwrap().to_biguint().unwrap(),)
+    (l.into_inner().to_biguint().unwrap(),
+     s.into_inner().to_biguint().unwrap(),
+     n.into_inner().to_biguint().unwrap(),)
 
 }
 
