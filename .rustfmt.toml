@@ -1,38 +1,36 @@
 
+max_width = 120
+
 edition = "2018"
-
-max_width = 81
-
-reorder_imports = false
-
-blank_lines_lower_bound = 1
 
 blank_lines_upper_bound = 4
 
-combine_control_expr = false
-
-condense_wildcard_suffixes = true
-
 enum_discrim_align_threshold = 1024
+
+struct_field_align_threshold = 1024
+
+merge_imports = true
 
 fn_single_line = true
 
-force_multiline_blocks = true
-
-format_code_in_doc_comments = true
-
-indent_style = "Visual"
-
-merge_imports = true
+reorder_imports = false
 
 normalize_comments = true
 
 reorder_impl_items = true
 
-struct_field_align_threshold = 1024
+combine_control_expr = false
+
+force_multiline_blocks = true
+
+use_field_init_shorthand = true
+
+condense_wildcard_suffixes = true
+
+format_code_in_doc_comments = true
+
+indent_style = "Visual"
 
 trailing_comma = "always"
 
 type_punctuation_density = "Compressed"
-
-use_field_init_shorthand = true

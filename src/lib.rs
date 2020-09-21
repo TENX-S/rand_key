@@ -43,6 +43,7 @@
 mod prelude;
 mod utils;
 
+
 use utils::*;
 
 
@@ -50,7 +51,6 @@ use utils::*;
 
 /// struct `RandKey`
 #[derive(Clone, Debug)]
-
 pub struct RandKey {
     ltr_cnt: BigUint,
     sbl_cnt: BigUint,
@@ -62,10 +62,8 @@ pub struct RandKey {
 
 
 /// A generic trait for converting a value to a `RandKey`.
-
 pub trait ToRandKey {
     /// Converts the value of `self` to a `RandKey`.
-
     fn to_randkey(&self) -> RandKey;
 }
 
@@ -76,11 +74,8 @@ impl RandKey {
     ///
     /// Basic usage:
     /// ```
-    /// 
     /// use rand_key::RandKey;
-    ///
     /// use num_bigint::BigUint;
-    ///
     /// let mut r_p = RandKey::new(11, 4, 2);
     ///
     /// // If you want push a large number in it
@@ -88,9 +83,7 @@ impl RandKey {
     /// use std::str::FromStr;
     ///
     /// let ltr_cnt = BigUint::from_str(&format!("{}000", usize::MAX)).unwrap();
-    ///
     /// let sbl_cnt = BigUint::from_str(&format!("{}000", usize::MAX)).unwrap();
-    ///
     /// let num_cnt = BigUint::from_str(&format!("{}000", usize::MAX)).unwrap();
     ///
     /// r_p = RandKey::new(ltr_cnt, sbl_cnt, num_cnt);
@@ -98,13 +91,11 @@ impl RandKey {
     /// // You can also mix the `BigUint` with primitive type
     /// ```
     #[inline]
-
     pub fn new<L, S, N>(ltr_cnt: L, sbl_cnt: S, num_cnt: N) -> Self
         where L: ToBigUint,
               S: ToBigUint,
               N: ToBigUint,
     {
-
         RandKey { ltr_cnt: ltr_cnt.to_biguint().unwrap(),
                   sbl_cnt: sbl_cnt.to_biguint().unwrap(),
                   num_cnt: num_cnt.to_biguint().unwrap(),
@@ -118,7 +109,6 @@ impl RandKey {
     ///
     /// Basic usage:
     /// ```
-    /// 
     /// use rand_key::RandKey;
     ///
     /// let r_p = RandKey::new(10, 2, 3);
@@ -126,7 +116,6 @@ impl RandKey {
     /// assert_eq!("", r_p.val())
     /// ```
     #[inline]
-
     pub fn val(&self) -> &str { &self.content }
 
     /// Change the content of `RandKey`, in the way of the name of operation.
@@ -139,11 +128,8 @@ impl RandKey {
     ///
     /// Basic usage:
     /// ```
-    /// 
     /// use rand_key::RandKey;
-    ///
     /// use num_traits::ToPrimitive;
-    ///
     /// use num_bigint::BigUint;
     ///
     /// // update
@@ -155,40 +141,28 @@ impl RandKey {
     /// let mut r_p = RandKey::new(10, 2, 3);
     ///
     /// assert!(r_p.set_val("]EH1zyqx3Bl/F8a", "check").is_ok());
-    ///
     /// assert!(r_p.set_val("123456", "check").is_err());
     /// ```
     #[inline]
-
     pub fn set_val(&mut self, val: &str, op: &str) -> Result<(), String> {
-
         let (val_ltr_cnt, val_sbl_cnt, val_num_cnt) = _CNT(val);
 
         match op {
             "update" => {
-
                 self.ltr_cnt = val_ltr_cnt;
-
                 self.sbl_cnt = val_sbl_cnt;
-
                 self.num_cnt = val_num_cnt;
-
                 self.content = val.into();
 
                 Ok(())
             }
 
             "check" => {
-
-                if (&self.ltr_cnt, &self.sbl_cnt, &self.num_cnt)
-                   == (&val_ltr_cnt, &val_sbl_cnt, &val_num_cnt)
-                {
-
+                if (&self.ltr_cnt, &self.sbl_cnt, &self.num_cnt) == (&val_ltr_cnt, &val_sbl_cnt, &val_num_cnt) {
                     self.content = val.into();
 
                     Ok(())
                 } else {
-
                     Err(format!("The fields of {:?} is not right", val))
                 }
             }
@@ -202,32 +176,24 @@ impl RandKey {
     ///
     /// Basic Usage:
     /// ```
-    /// 
     /// use num_traits::One;
-    ///
     /// use rand_key::RandKey;
-    ///
     /// use num_bigint::BigUint;
     ///
-    /// let r_p = RandKey::new(10, 2, 3); // The default value of unit is 1
-    /// assert_eq!(r_p.unit().clone(), BigUint::one());
+    /// let r_p = RandKey::new(10, 2, 3); // The default value of unit is 1024
+    /// assert_eq!(r_p.unit().clone(), BigUint::from(1024_u16));
     /// ```
     #[inline]
-
     pub fn unit(&self) -> &BigUint { &self.UNIT }
 
     /// [set a right `UNIT` number](https://docs.rs/rand_key/1.1.3/rand_key/#the-unit-field).
     #[inline]
-
     pub unsafe fn set_unit(&mut self, val: impl ToBigUint) -> Result<(), &str> {
-
         let val = val.to_biguint().unwrap();
 
         if val == BigUint::zero() {
-
             Err("Unit can not be zero!")
         } else {
-
             self.UNIT = val;
 
             Ok(())
@@ -236,72 +202,59 @@ impl RandKey {
 
     /// Return the shared reference of `DATA`
     #[inline]
-
     pub fn data(&self) -> &Vec<Vec<String>> { &self.DATA }
 
     /// Return a new `RandKey` which has the replaced data
     #[inline]
-
-    pub fn replace_data(&mut self,
-                        val: &[impl AsRef<str>])
-                        -> Result<(), String> {
-
+    #[rustfmt::skip]
+    pub fn replace_data(&mut self, val: &[impl AsRef<str>]) -> Result<(), String> {
         use std::str::FromStr;
 
         if val.iter()
               .filter(|x| {
-
                   let x = char::from_str(x.as_ref()).unwrap();
 
-                  !(x.is_ascii_alphabetic()
-                    || x.is_ascii_punctuation()
-                    || x.is_ascii_digit())
+                  !(
+                      x.is_ascii_alphabetic()  ||
+                      x.is_ascii_punctuation() ||
+                      x.is_ascii_digit()
+                  )
               })
               .collect::<Vec<_>>()
               .len()
-              .is_zero()
-        {
+              .is_zero() {
 
             self.DATA = {
 
                 let mut ltr = vec![];
-
                 let mut sbl = vec![];
-
                 let mut num = vec![];
 
                 val.iter().for_each(|x| {
-
                               let x = char::from_str(x.as_ref()).unwrap();
 
                               if x.is_ascii_alphabetic() {
-
                                   ltr.push(x.into());
                               }
 
                               if x.is_ascii_punctuation() {
-
                                   sbl.push(x.into());
                               }
 
                               if x.is_ascii_digit() {
-
                                   num.push(x.into());
                               }
                           });
 
                 if !self.ltr_cnt.is_zero() && ltr.len().is_zero() {
-
                     return Err(String::from("Expect some letters in replaced data!"));
                 }
 
                 if !self.sbl_cnt.is_zero() && sbl.len().is_zero() {
-
                     return Err(String::from("Expect some symbols in replaced data!"));
                 }
 
                 if !self.num_cnt.is_zero() && ltr.len().is_zero() {
-
                     return Err(String::from("Expect some numbers in replaced data!"));
                 }
 
@@ -309,8 +262,8 @@ impl RandKey {
             };
 
             Ok(())
-        } else {
 
+        } else {
             Err("Has non ASCII character(s)".into())
         }
     }
@@ -320,7 +273,6 @@ impl RandKey {
     ///
     /// Basic usage:
     /// ```
-    /// 
     /// use rand_key::RandKey;
     ///
     /// let mut r_p = RandKey::new(10, 2, 3);
@@ -330,12 +282,10 @@ impl RandKey {
     /// assert_eq!(r_p.len(), 15);
     /// ```
     #[inline]
-
     pub fn len(&self) -> usize { self.content.len() }
 
     /// Returns true if this `RandKey` has a length of zero, and false otherwise.
     #[inline]
-
     pub fn is_empty(&self) -> bool { self.content.is_empty() }
 
     /// Get count of `RandKey`
@@ -343,7 +293,6 @@ impl RandKey {
     ///
     /// Basic usage:
     /// ```
-    /// 
     /// use rand_key::RandKey;
     ///
     /// use num_traits::ToPrimitive;
@@ -351,15 +300,11 @@ impl RandKey {
     /// let r_p = RandKey::new(10, 2, 3);
     ///
     /// assert_eq!(r_p.get_cnt("L").unwrap().to_usize().unwrap(), 10);
-    ///
     /// assert_eq!(r_p.get_cnt("S").unwrap().to_usize().unwrap(), 2);
-    ///
     /// assert_eq!(r_p.get_cnt("N").unwrap().to_usize().unwrap(), 3);
     /// ```
     #[inline]
-
     pub fn get_cnt(&self, kind: &str) -> Option<&BigUint> {
-
         match kind {
             "L" => Some(&self.ltr_cnt),
             "S" => Some(&self.sbl_cnt),
@@ -374,7 +319,6 @@ impl RandKey {
     ///
     /// Basic usage:
     /// ```
-    /// 
     /// use rand_key::*;
     ///
     /// let mut r_p = RandKey::new(10, 2, 3);
@@ -406,27 +350,19 @@ impl RandKey {
     /// // Output: +iQiQGSXl(nv
     /// ```
     #[inline]
-
-    pub fn set_cnt(&mut self,
-                   kind: &str,
-                   val: impl ToBigUint)
-                   -> Result<(), String> {
-
+    pub fn set_cnt(&mut self, kind: &str, val: impl ToBigUint) -> Result<(), String> {
         match kind {
             "L" => {
-
                 self.ltr_cnt = val.to_biguint().unwrap();
 
                 Ok(())
             }
             "S" => {
-
                 self.sbl_cnt = val.to_biguint().unwrap();
 
                 Ok(())
             }
             "N" => {
-
                 self.num_cnt = val.to_biguint().unwrap();
 
                 Ok(())
@@ -441,7 +377,6 @@ impl RandKey {
     ///
     /// Basic usage:
     /// ```
-    /// 
     /// use rand_key::RandKey;
     ///
     /// let mut r_p = RandKey::new(10, 2, 3);
@@ -457,7 +392,6 @@ impl RandKey {
         let mut inner_r_p = self.clone();
 
         let unit = &inner_r_p.UNIT;
-
         let data = &inner_r_p.DATA;
 
         // TODO: - Improve readability
