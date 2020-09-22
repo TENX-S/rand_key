@@ -64,24 +64,20 @@ pub(crate) fn _CNT(content: impl AsRef<str>) -> (BigUint, BigUint, BigUint) {
 
                    if x.is_ascii_alphabetic() {
                        temp = l.lock();
-
                        *temp += 1;
                    }
 
                    if x.is_ascii_punctuation() {
                        temp = s.lock();
-
                        *temp += 1;
                    }
 
                    if x.is_ascii_digit() {
                        temp = n.lock();
-
                        *temp += 1;
                    }
                } else {
-                   panic!("Has non-ASCII character(s)!, the first one is: {:?}",
-                          x)
+                   panic!("Has non-ASCII character(s)!, the first one is: {:?}", x)
                }
            });
 
@@ -126,3 +122,54 @@ pub(crate) fn _DIV_UNIT(unit: &BigUint, n: &mut BigUint) -> Vec<BigUint> {
 
     ret
 }
+
+/// Check whether the elements in the sequence are all ascii values
+#[inline]
+pub(crate) fn check_ascii<T: IntoIterator>(v: T) -> bool
+    where <T as IntoIterator>::Item: AsRef<str>
+{
+    use std::str::FromStr;
+    v.into_iter().skip_while(|c| {
+        let c = char::from_str(c.as_ref()).unwrap();
+        c.is_ascii() && !c.is_ascii_control()
+    }).next().is_none()
+}
+
+
+#[inline]
+pub(crate) fn group<T: IntoIterator>(v: T) -> Vec<Vec<String>>
+    where <T as IntoIterator>::Item: AsRef<str>
+{
+
+    use parking_lot::Mutex;
+    use std::str::FromStr;
+    let v = v.into_iter().map(|x| x.as_ref().to_string()).collect::<Vec<String>>();
+
+    let ltr = Mutex::new(Vec::new());
+    let sbl = Mutex::new(Vec::new());
+    let num = Mutex::new(Vec::new());
+
+    v.par_iter().for_each(|c| {
+        let mut temp;
+        let c = char::from_str(c).unwrap();
+        if c.is_ascii_alphabetic() {
+            temp = ltr.lock();
+            temp.push(c.clone().to_string());
+        }
+
+        if c.is_ascii_punctuation() {
+            temp = sbl.lock();
+            temp.push(c.clone().to_string());
+        }
+
+        if c.is_ascii_digit() {
+            temp = num.lock();
+            temp.push(c.clone().to_string());
+        }
+
+    });
+
+    vec![ltr.into_inner(), sbl.into_inner(), num.into_inner()]
+
+}
+

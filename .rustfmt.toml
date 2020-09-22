@@ -21,8 +21,6 @@ reorder_impl_items = true
 
 combine_control_expr = false
 
-force_multiline_blocks = true
-
 use_field_init_shorthand = true
 
 condense_wildcard_suffixes = true
@@ -32,5 +30,9 @@ format_code_in_doc_comments = true
 indent_style = "Visual"
 
 trailing_comma = "always"
+
+ignore = [
+    "examples/kg_test.rs"
+]
 
 type_punctuation_density = "Compressed"

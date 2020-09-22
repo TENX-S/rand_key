@@ -3,7 +3,7 @@
 //! use rand_key::{ RandKey, ToRandKey };
 //! fn main() {
 //!     let mut r_p = RandKey::new(10, 2, 3); // For now, it's empty. Use method `join` to generate the password
-//!     r_p.join();                           // Now `r_p` has some content, be kept in its `content` field
+//!     r_p.join();                           // Now `r_p` has some content, be kept in its `key` field
 //!     println!("{}", r_p);                  // Print it on the screen
 //!     // One possible output: 7$pA7yMCw=2DPGN
 //!     // Or you can build from an existing `&str`
@@ -28,15 +28,14 @@
 //! However, it takes up huge RAM(Because these numbers are represented in `BigUint`, kind of a `Vec`).
 //! And the procedure is single-threaded, you can only process them one by one.
 //!
-//! My approach is to divide these large numbers into many small numbers,
+//! The approach is to divide these large numbers into many small numbers,
 //! and then process these small numbers in parallel,
 //! so the small numbers here can be understood as `UNIT`.
-//! For 1M letters, we set 1K as the unit value, so [1M] = [1K, 1K, …, 1K] (1000 ones).
+//! For 1M(1 000 000) letters, we set 1K(1000) as the unit value, so [1M] = [1K, 1K, …, 1K] (1000 ones).
 //! And we just need to hand this sequence to [rayon](https://github.com/rayon-rs/rayon) for processing.
-//! But the disadvantages are also obvious, if `UNIT` number is too small, like default value: 1,
-//! then capcity of the `Vec` is 1M at least!
+//! But the disadvantages are also obvious, if `UNIT` number is too small, like `1`,
+//! Threads did nothing useful! And capcity of the `Vec` is 1M at least!
 //! It will take up huge even all RAM and may harm your computer. **So `RandKey::set_unit()` is unsafe**
-//! In the next version, there will be a smart `UNIT` value to fix this problem.
 
 #![allow(non_snake_case)]
 
@@ -55,7 +54,7 @@ pub struct RandKey {
     ltr_cnt: BigUint,
     sbl_cnt: BigUint,
     num_cnt: BigUint,
-    content: String,
+    key:     String,
     UNIT:    BigUint,
     DATA:    Vec<Vec<String>>,
 }
@@ -96,15 +95,17 @@ impl RandKey {
               S: ToBigUint,
               N: ToBigUint,
     {
-        RandKey { ltr_cnt: ltr_cnt.to_biguint().unwrap(),
-                  sbl_cnt: sbl_cnt.to_biguint().unwrap(),
-                  num_cnt: num_cnt.to_biguint().unwrap(),
-                  content: String::new(),
-                  UNIT:    BigUint::from(1024_u16),
-                  DATA:    _DATA(), }
+        RandKey {
+            ltr_cnt: ltr_cnt.to_biguint().unwrap(),
+            sbl_cnt: sbl_cnt.to_biguint().unwrap(),
+            num_cnt: num_cnt.to_biguint().unwrap(),
+            key:     String::new(),
+            UNIT:    BigUint::from(1024_u16),
+            DATA:    _DATA(),
+        }
     }
 
-    /// Return the content of random password in `&str`
+    /// Return the key of random password in `&str`
     /// # Example
     ///
     /// Basic usage:
@@ -116,14 +117,14 @@ impl RandKey {
     /// assert_eq!("", r_p.val())
     /// ```
     #[inline]
-    pub fn val(&self) -> &str { &self.content }
+    pub fn key(&self) -> &str { &self.key }
 
-    /// Change the content of `RandKey`, in the way of the name of operation.
+    /// Change the key of `RandKey`, in the way of the name of operation.
     /// There are two operations: **update** and **check**
     ///
     /// * **update** : Replace the value you've passed and update the field.
     ///
-    /// * **check** : If the field of new value doesn't match the old one, it will return an `Err` or the old `content` will be replaced.
+    /// * **check** : If the field of new value doesn't match the old one, it will return an `Err` or the old `key` will be replaced.
     /// # Example
     ///
     /// Basic usage:
@@ -144,7 +145,8 @@ impl RandKey {
     /// assert!(r_p.set_val("123456", "check").is_err());
     /// ```
     #[inline]
-    pub fn set_val(&mut self, val: &str, op: &str) -> Result<(), String> {
+    #[rustfmt::skip]
+    pub fn set_key(&mut self, val: &str, op: &str) -> Result<(), String> {
         let (val_ltr_cnt, val_sbl_cnt, val_num_cnt) = _CNT(val);
 
         match op {
@@ -152,14 +154,18 @@ impl RandKey {
                 self.ltr_cnt = val_ltr_cnt;
                 self.sbl_cnt = val_sbl_cnt;
                 self.num_cnt = val_num_cnt;
-                self.content = val.into();
+                self.key = val.into();
 
                 Ok(())
             }
 
             "check" => {
-                if (&self.ltr_cnt, &self.sbl_cnt, &self.num_cnt) == (&val_ltr_cnt, &val_sbl_cnt, &val_num_cnt) {
-                    self.content = val.into();
+                if (&self.ltr_cnt,
+                    &self.sbl_cnt,
+                    &self.num_cnt) == (&val_ltr_cnt,
+                                       &val_sbl_cnt,
+                                       &val_num_cnt) {
+                    self.key = val.into();
 
                     Ok(())
                 } else {
@@ -186,7 +192,7 @@ impl RandKey {
     #[inline]
     pub fn unit(&self) -> &BigUint { &self.UNIT }
 
-    /// [set a right `UNIT` number](https://docs.rs/rand_key/1.1.3/rand_key/#the-unit-field).
+    /// [set a right `UNIT` number](https://docs.rs/rand_pwd/1.1.3/rand_pwd/#the-unit-field).
     #[inline]
     pub unsafe fn set_unit(&mut self, val: impl ToBigUint) -> Result<(), &str> {
         let val = val.to_biguint().unwrap();
@@ -200,29 +206,117 @@ impl RandKey {
         }
     }
 
+
     /// Return the shared reference of `DATA`
     #[inline]
     pub fn data(&self) -> &Vec<Vec<String>> { &self.DATA }
 
-    /// Return a new `RandKey` which has the replaced data
+
+    /// Clear all the data of `RandPwd`
     #[inline]
-    #[rustfmt::skip]
-    pub fn replace_data(&mut self, val: &[impl AsRef<str>]) -> Result<(), String> {
+    pub fn clear_all(&mut self) { self.DATA.iter_mut().for_each(|x| x.clear()); }
+
+    /// Clear the letters, symbols or numbers
+    #[inline]
+    pub fn clear(&mut self, kind: &str) {
+
+        match kind {
+            "L" => self.DATA[0].clear(),
+            "S" => self.DATA[1].clear(),
+            "N" => self.DATA[2].clear(),
+
+             _  => (),
+        }
+
+    }
+
+    /// Check the data
+    #[inline]
+    #[allow(non_snake_case)]
+    pub fn check_data(&self) -> Result<(), String> {
+
+        let L = self.ltr_cnt.is_zero();
+        let S = self.sbl_cnt.is_zero();
+        let N = self.num_cnt.is_zero();
+
+        let dl = self.DATA[0].is_empty();
+        let ds = self.DATA[1].is_empty();
+        let dn = self.DATA[2].is_empty();
+
+        let dl_L = !L && dl;
+        let ds_S = !S && ds;
+        let dn_N = !N && dn;
+
+        if !(dl_L || ds_S || dn_N) {
+            Ok(())
+        } else {
+            Err("The corresponding character is missing!".into())
+        }
+
+    }
+
+    /// Delete the data
+    /// # Example
+    ///
+    /// Basic Usage
+    /// ```
+    /// use rand_key::RandKey;
+    /// ```
+    #[inline]
+    pub fn delete<T: IntoIterator+Clone>(&mut self, items: T) -> Result<(), String>
+        where <T as IntoIterator>::Item: AsRef<str>
+    {
         use std::str::FromStr;
 
-        if val.iter()
-              .filter(|x| {
-                  let x = char::from_str(x.as_ref()).unwrap();
+        let mut all = self.DATA.concat();
 
-                  !(
-                      x.is_ascii_alphabetic()  ||
-                      x.is_ascii_punctuation() ||
-                      x.is_ascii_digit()
-                  )
-              })
-              .collect::<Vec<_>>()
-              .len()
-              .is_zero() {
+        if check_ascii(items.clone().into_iter()) {
+
+            let mut v = items
+                .into_iter()
+                .map(|c| char::from_str(c.as_ref()).unwrap())
+                .collect::<Vec<_>>();
+
+            v.dedup_by_key(|x| char::clone(x) as u8);
+
+            if  v.iter().skip_while(|x| all.contains(&x.to_string())).next().is_none() {
+                all.retain(|x| !v.contains(&char::from_str(x).unwrap()));
+                self.DATA = group(all);
+            } else {
+                panic!("Delete non-exist value!");
+            }
+        } else {
+            panic!("Has non ASCII character(s)");
+        }
+
+        self.check_data()
+
+    }
+
+    /// Return a new `RandKey` which has the replaced data
+    /// # Example
+    ///
+    /// Basic usage:
+    /// ```
+    /// use rand_key::RandKey;
+    /// let mut r_p = RandKey::new(10, 2, 3);
+    /// // Missing some kinds of characters will get an Err value
+    /// assert!(r_p.replace_data(&["1"]).is_err());
+    /// assert!(r_p.replace_data(&["a"]).is_err());
+    /// assert!(r_p.replace_data(&["-"]).is_err());
+    /// assert!(r_p.replace_data(&["1", "a", "."]).is_ok());
+    /// r_p.join();
+    /// println!("{}", r_p);
+    /// // One possible output: .aa1a1aaaa.a1aa
+    /// ```
+    #[inline]
+    #[rustfmt::skip]
+    pub fn replace_data<T: IntoIterator+Clone>(&mut self, val: T) -> Result<(), String>
+        where <T as IntoIterator>::Item: AsRef<str>
+    {
+        use std::str::FromStr;
+
+        if check_ascii(val.clone().into_iter()) {
 
             self.DATA = {
 
@@ -230,41 +324,22 @@ impl RandKey {
                 let mut sbl = vec![];
                 let mut num = vec![];
 
-                val.iter().for_each(|x| {
-                              let x = char::from_str(x.as_ref()).unwrap();
+                val.into_iter().for_each(|x| {
+                    let x = char::from_str(x.as_ref()).unwrap();
 
-                              if x.is_ascii_alphabetic() {
-                                  ltr.push(x.into());
-                              }
-
-                              if x.is_ascii_punctuation() {
-                                  sbl.push(x.into());
-                              }
-
-                              if x.is_ascii_digit() {
-                                  num.push(x.into());
-                              }
-                          });
-
-                if !self.ltr_cnt.is_zero() && ltr.len().is_zero() {
-                    return Err(String::from("Expect some letters in replaced data!"));
-                }
-
-                if !self.sbl_cnt.is_zero() && sbl.len().is_zero() {
-                    return Err(String::from("Expect some symbols in replaced data!"));
-                }
-
-                if !self.num_cnt.is_zero() && ltr.len().is_zero() {
-                    return Err(String::from("Expect some numbers in replaced data!"));
-                }
+                    if x.is_ascii_alphabetic()  { ltr.push(x.into()); }
+                    if x.is_ascii_punctuation() { sbl.push(x.into()); }
+                    if x.is_ascii_digit()       { num.push(x.into()); }
+                });
 
                 vec![ltr, sbl, num]
+
             };
 
-            Ok(())
+            self.check_data()
 
         } else {
-            Err("Has non ASCII character(s)".into())
+            panic!("Has non ASCII character(s)");
         }
     }
 
@@ -282,11 +357,11 @@ impl RandKey {
     /// assert_eq!(r_p.len(), 15);
     /// ```
     #[inline]
-    pub fn len(&self) -> usize { self.content.len() }
+    pub fn len(&self) -> usize { self.key.len() }
 
     /// Returns true if this `RandKey` has a length of zero, and false otherwise.
     #[inline]
-    pub fn is_empty(&self) -> bool { self.content.is_empty() }
+    pub fn is_empty(&self) -> bool { self.key.is_empty() }
 
     /// Get count of `RandKey`
     /// # Example
@@ -299,16 +374,16 @@ impl RandKey {
     ///
     /// let r_p = RandKey::new(10, 2, 3);
     ///
-    /// assert_eq!(r_p.get_cnt("L").unwrap().to_usize().unwrap(), 10);
-    /// assert_eq!(r_p.get_cnt("S").unwrap().to_usize().unwrap(), 2);
-    /// assert_eq!(r_p.get_cnt("N").unwrap().to_usize().unwrap(), 3);
+    /// assert_eq!(r_p.get_cnt("L"), 10.to_biguint());
+    /// assert_eq!(r_p.get_cnt("S"), 2.to_biguint());
+    /// assert_eq!(r_p.get_cnt("N"), 3.to_biguint());
     /// ```
     #[inline]
-    pub fn get_cnt(&self, kind: &str) -> Option<&BigUint> {
+    pub fn get_cnt(&self, kind: &str) -> Option<BigUint> {
         match kind {
-            "L" => Some(&self.ltr_cnt),
-            "S" => Some(&self.sbl_cnt),
-            "N" => Some(&self.num_cnt),
+            "L" => Some(self.ltr_cnt.clone()),
+            "S" => Some(self.sbl_cnt.clone()),
+            "N" => Some(self.num_cnt.clone()),
 
             _ => None,
         }
@@ -320,34 +395,21 @@ impl RandKey {
     /// Basic usage:
     /// ```
     /// use rand_key::*;
+    /// use num_bigint::ToBigUint;
     ///
     /// let mut r_p = RandKey::new(10, 2, 3);
     ///
     /// // Set the letter's count
-    /// r_p.set_cnt("ltr", 0);
-    ///
-    /// r_p.join();
-    ///
-    /// println!("{}", r_p.val());
-    ///
-    /// // Output: *029(
+    /// r_p.set_cnt("L", 20);
+    /// assert_eq!(r_p.get_cnt("L"), 10.to_biguint());
     ///
     /// // Set the symbol's count
-    /// r_p.set_cnt("sbl", 0);
-    ///
-    /// r_p.join();
-    ///
-    /// println!("{}", r_p.val());
-    ///
-    /// // Output: nz1MriAl0j5on
+    /// r_p.set_cnt("S", 1000);
+    /// assert_eq!(r_p.get_cnt("S"), 1000.to_biguint());
     ///
     /// // Set the number's count
-    /// r_p.set_cnt("num", 0);
-    ///
-    /// r_p.join();
-    ///
-    /// println!("{}", r_p.val());
-    /// // Output: +iQiQGSXl(nv
+    /// r_p.set_cnt("N", 0);
+    /// assert_eq!(r_p.get_cnt("N"), 0.to_biguint());
     /// ```
     #[inline]
     pub fn set_cnt(&mut self, kind: &str, val: impl ToBigUint) -> Result<(), String> {
@@ -416,13 +478,9 @@ impl RandKey {
                 .join("");
 
         // This is absolutely safe, because they are all ASCII characters except control ones.
-        let bytes = unsafe {
-
-            PWD.as_bytes_mut()
-        };
-
+        let bytes = unsafe { PWD.as_bytes_mut() };
         bytes.shuffle(&mut thread_rng());
-
-        self.content = bytes.par_iter().map(|s| *s as char).collect::<String>();
+        self.key = bytes.par_iter().map(|s| *s as char).collect::<String>();
     }
+
 }

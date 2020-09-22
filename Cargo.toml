@@ -1,11 +1,11 @@
 [package]
 name = "rand_key"
 version = "1.2.0"
-authors = ["TENX-S <ttenx@pm.me>"]
+authors = ["Ares <coldswind@pm.me>"]
 edition = "2018"
 description = "Generate random password"
 documentation = "https://docs.rs/rand_pwd"
-repository = "https://github.com/TENX-S/rand_pwd"
+repository = "https://github.com/TENX-S/rand_key"
 license = "MIT"
 readme = "README.md"
 keywords = ["password", "random", "random_password"]
@@ -23,6 +23,3 @@ parking_lot = "0.11.0"
 lto = true
 panic = 'abort'
 codegen-units = 1
-
-
-

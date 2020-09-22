@@ -1,7 +1,7 @@
 # Random key generator
 
 
-
+**USE AS YOUR OWN RISK**
 
 ## What
 
@@ -38,11 +38,6 @@ $ cargo run --release --example kg_test 100000000 0 0 100
 ```
 
 
-## ATTENTION!
-
-**Do not** try a very large number, even it's allowed, like `i128::MAX`, unless you got extremely large RAM and great CPU, or you may got a **blue screen or any unpredictable behaviour** that will harm your computer hardware or unsaved files since you don't [set a right `UNIT` number](https://docs.rs/rand_pwd/1.1.3/rand_pwd/#the-unit-field).
-
-
 ## Usage
 
 In `Cargo.toml`:
@@ -55,7 +50,7 @@ You may want to use the latest feature(not stable and may requires nightly Rust)
 rand_pwd = { git = "https://github.com/TENX-S/rand_key", branch = "master" }
 ```
 
-Here's the simply demo of partital API:
+Here's a simple demo:
 ```rust
 use rand_key::{ RandKey, ToRandKey };
 
@@ -74,12 +69,13 @@ fn main() {
     // One possible output: qS`Xlyhpmg~"V8[
 
     // You can also use the method `to_randkey` to convert a `String` or `&str` to `RandPwd`
+    // But you have to make sure that they are all composed of ASCII characters or it will panic.
 
     let mut r_p = "n4jpstv$dI,.z'K".to_randkey();
 
-    // Panic! Has non-ASCII character(s)!
     // let mut r_p = RandPwd::from("🦀️🦀️🦀️");
     // let mut r_p = "🦀️🦀️🦀️".to_randkey();
+    // Panic! Has non-ASCII character(s)!
 }
 ```
 
