@@ -20,7 +20,7 @@ impl Default for RandKey {
             sbl_cnt: Default::default(),
             num_cnt: Default::default(),
             key:     Default::default(),
-            UNIT:    BigUint::from(1024_u16),
+            UNIT:    BigUint::from(u16::MAX),
             DATA:    _DATA(),
         }
     }

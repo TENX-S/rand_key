@@ -100,7 +100,7 @@ impl RandKey {
             sbl_cnt: sbl_cnt.to_biguint().unwrap(),
             num_cnt: num_cnt.to_biguint().unwrap(),
             key:     String::new(),
-            UNIT:    BigUint::from(1024_u16),
+            UNIT:    BigUint::from(u16::MAX),
             DATA:    _DATA(),
         }
     }
