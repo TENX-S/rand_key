@@ -186,8 +186,8 @@ impl RandKey {
     /// use rand_key::RandKey;
     /// use num_bigint::BigUint;
     ///
-    /// let r_p = RandKey::new(10, 2, 3); // The default value of unit is 1024
-    /// assert_eq!(r_p.unit().clone(), BigUint::from(1024_u16));
+    /// let r_p = RandKey::new(10, 2, 3); // The default value of unit is 65536
+    /// assert_eq!(r_p.unit().clone(), BigUint::from(u16::MAX));
     /// ```
     #[inline]
     pub fn unit(&self) -> &BigUint { &self.UNIT }
@@ -210,7 +210,20 @@ impl RandKey {
 
     /// Return the shared reference of `DATA`
     #[inline]
-    pub fn data(&self) -> &Vec<Vec<String>> { &self.DATA }
+    pub fn all_data(&self) -> &Vec<Vec<String>> { &self.DATA }
+
+
+    /// Return data depend on given kind
+    #[inline]
+    pub fn data(&self, kind: &str) -> Option<Vec<String>> {
+        match kind {
+            "L" => Some(self.DATA[0].clone()),
+            "S" => Some(self.DATA[1].clone()),
+            "N" => Some(self.DATA[2].clone()),
+
+             _  => None,
+        }
+    }
 
 
     /// Clear all the data of `RandPwd`
@@ -262,9 +275,13 @@ impl RandKey {
     /// Basic Usage
     /// ```
     /// use rand_key::RandKey;
+    /// let mut r_p = RandKey::new(10 ,2 ,3);
+    /// r_p.replace_data(&["1", "2", "a", "-"]);
+    /// r_p.del_item(&["1"]);
+    /// assert_eq!(r_p.data("N").unwrap(), vec!["2"]);
     /// ```
     #[inline]
-    pub fn delete<T: IntoIterator+Clone>(&mut self, items: T)
+    pub fn del_item<T: IntoIterator+Clone>(&mut self, items: T)
         where <T as IntoIterator>::Item: AsRef<str>
     {
         use std::str::FromStr;
@@ -316,7 +333,7 @@ impl RandKey {
         if check_ascii(val.clone().into_iter()) {
             let val = group(val.clone().into_iter());
 
-            for i in 0..=2 {
+            for i in 0..self.DATA.len() {
                 self.DATA[i].extend_from_slice(&val[i]);
                 self.DATA[i].dedup_by_key(|x| char::from_str(x).unwrap() as u8);
             }
