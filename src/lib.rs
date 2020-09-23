@@ -3,13 +3,13 @@
 //! use rand_key::{ RandKey, ToRandKey };
 //! fn main() {
 //!     let mut r_p = RandKey::new(10, 2, 3); // For now, it's empty. Use method `join` to generate the password
-//!     r_p.join();                           // Now `r_p` has some content, be kept in its `key` field
+//!     r_p.join().unwrap();                           // Now `r_p` has some content, be kept in its `key` field
 //!     println!("{}", r_p);                  // Print it on the screen
 //!     // One possible output: 7$pA7yMCw=2DPGN
 //!     // Or you can build from an existing `&str`
 //!     let mut r_p = RandKey::from("=tE)n5f`sidR>BV"); // 10 letters, 4 symbols, 1 number
 //!     // You can rebuild a random password and with equivalent amount of letters, symbols and numbers. Like below
-//!     r_p.join();
+//!     r_p.join().unwrap();
 //!     println!("{}", r_p);
 //!     // One possible output: qS`Xlyhpmg~"V8[
 //!     // All the `String` and `&str` has implemented trait `ToRandKey`
@@ -114,7 +114,7 @@ impl RandKey {
     ///
     /// let r_p = RandKey::new(10, 2, 3);
     ///
-    /// assert_eq!("", r_p.val())
+    /// assert_eq!("", r_p.key())
     /// ```
     #[inline]
     pub fn key(&self) -> &str { &self.key }
@@ -136,13 +136,13 @@ impl RandKey {
     /// // update
     /// let mut r_p = RandKey::new(10, 2, 3);
     ///
-    /// assert!(r_p.set_val("123456", "update").is_ok());
+    /// assert!(r_p.set_key("123456", "update").is_ok());
     ///
     /// // check
     /// let mut r_p = RandKey::new(10, 2, 3);
     ///
-    /// assert!(r_p.set_val("]EH1zyqx3Bl/F8a", "check").is_ok());
-    /// assert!(r_p.set_val("123456", "check").is_err());
+    /// assert!(r_p.set_key("]EH1zyqx3Bl/F8a", "check").is_ok());
+    /// assert!(r_p.set_key("123456", "check").is_err());
     /// ```
     #[inline]
     #[rustfmt::skip]
@@ -402,7 +402,7 @@ impl RandKey {
     /// Basic usage:
     /// ```
     /// use rand_key::RandKey;
-    ///
+    /// use num_bigint::ToBigUint;
     /// use num_traits::ToPrimitive;
     ///
     /// let r_p = RandKey::new(10, 2, 3);
@@ -434,7 +434,7 @@ impl RandKey {
     ///
     /// // Set the letter's count
     /// r_p.set_cnt("L", 20);
-    /// assert_eq!(r_p.get_cnt("L"), 10.to_biguint());
+    /// assert_eq!(r_p.get_cnt("L"), 20.to_biguint());
     ///
     /// // Set the symbol's count
     /// r_p.set_cnt("S", 1000);

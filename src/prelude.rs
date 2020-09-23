@@ -47,9 +47,9 @@ impl Add for RandKey {
     /// let mut r1 = RandKey::new(4, 5, 6);
     /// let mut r2 = r0 + r1;
     ///
-    /// assert_eq!(*r2.get_cnt("L"), 5.to_biguint());
-    /// assert_eq!(*r2.get_cnt("S"), 7.to_biguint());
-    /// assert_eq!(*r2.get_cnt("N"), 9.to_biguint());
+    /// assert_eq!(r2.get_cnt("L"), 5.to_biguint());
+    /// assert_eq!(r2.get_cnt("S"), 7.to_biguint());
+    /// assert_eq!(r2.get_cnt("N"), 9.to_biguint());
     /// ```
     #[inline]
     fn add(self, rhs: Self) -> Self {
@@ -78,9 +78,9 @@ impl AddAssign for RandKey {
     ///
     /// r0 += r1;
     ///
-    /// assert_eq!(*r0.get_cnt("L").unwrap(), BigUint::from(5_usize));
-    /// assert_eq!(*r0.get_cnt("S").unwrap(), BigUint::from(7_usize));
-    /// assert_eq!(*r0.get_cnt("N").unwrap(), BigUint::from(9_usize));
+    /// assert_eq!(r0.get_cnt("L").unwrap(), BigUint::from(5_usize));
+    /// assert_eq!(r0.get_cnt("S").unwrap(), BigUint::from(7_usize));
+    /// assert_eq!(r0.get_cnt("N").unwrap(), BigUint::from(9_usize));
     /// ```
     #[inline]
     fn add_assign(&mut self, rhs: Self) {
