@@ -41,10 +41,14 @@
 
 mod prelude;
 mod utils;
+mod error;
+
+
 
 
 use utils::*;
-
+use error::GenError;
+use std::str::FromStr;
 
 
 
@@ -105,6 +109,7 @@ impl RandKey {
         }
     }
 
+
     /// Return the key of random password in `&str`
     /// # Example
     ///
@@ -118,6 +123,7 @@ impl RandKey {
     /// ```
     #[inline]
     pub fn key(&self) -> &str { &self.key }
+
 
     /// Change the key of `RandKey`, in the way of the name of operation.
     /// There are two operations: **update** and **check**
@@ -146,10 +152,11 @@ impl RandKey {
     /// ```
     #[inline]
     #[rustfmt::skip]
-    pub fn set_key(&mut self, val: &str, op: &str) -> Result<(), String> {
+    pub fn set_key(&mut self, val: &str, op: &str) -> Result<(), GenError> {
         let (val_ltr_cnt, val_sbl_cnt, val_num_cnt) = _CNT(val);
 
         match op {
+
             "update" => {
                 self.ltr_cnt = val_ltr_cnt;
                 self.sbl_cnt = val_sbl_cnt;
@@ -169,13 +176,15 @@ impl RandKey {
 
                     Ok(())
                 } else {
-                    Err(format!("The fields of {:?} is not right", val))
+                    Err(GenError::InvalidField(val.into()))
                 }
             }
 
             _ => Ok(()),
         }
+
     }
+
 
     /// Return the value of `UNIT`
     /// # Example
@@ -192,14 +201,15 @@ impl RandKey {
     #[inline]
     pub fn unit(&self) -> &BigUint { &self.UNIT }
 
+
     /// [set a right `UNIT` number](https://docs.rs/rand_pwd/1.1.3/rand_pwd/#the-unit-field).
     #[inline]
-    pub fn set_unit(&mut self, val: impl ToBigUint) -> Result<(), &str> {
+    pub fn set_unit(&mut self, val: impl ToBigUint) -> Result<(), GenError> {
 
         let val = val.to_biguint().unwrap();
 
         if val == BigUint::zero() {
-            Err("Unit can not be zero!")
+            Err(GenError::UnitNeZero)
         } else {
             self.UNIT = val;
             Ok(())
@@ -215,13 +225,13 @@ impl RandKey {
 
     /// Return data depend on given kind
     #[inline]
-    pub fn data(&self, kind: &str) -> Option<Vec<String>> {
+    pub fn data(&self, kind: &str) -> Result<Vec<String>, GenError> {
         match kind {
-            "L" => Some(self.DATA[0].clone()),
-            "S" => Some(self.DATA[1].clone()),
-            "N" => Some(self.DATA[2].clone()),
+            "L" => Ok(self.DATA[0].clone()),
+            "S" => Ok(self.DATA[1].clone()),
+            "N" => Ok(self.DATA[2].clone()),
 
-             _  => None,
+             _  => Err(GenError::InvalidKind(kind.into())),
         }
     }
 
@@ -230,24 +240,26 @@ impl RandKey {
     #[inline]
     pub fn clear_all(&mut self) { self.DATA.iter_mut().for_each(|x| x.clear()); }
 
+
     /// Clear the letters, symbols or numbers
     #[inline]
-    pub fn clear(&mut self, kind: &str) {
+    pub fn clear(&mut self, kind: &str) -> Result<(), GenError>{
 
         match kind {
-            "L" => self.DATA[0].clear(),
-            "S" => self.DATA[1].clear(),
-            "N" => self.DATA[2].clear(),
+            "L" => Ok(self.DATA[0].clear()),
+            "S" => Ok(self.DATA[1].clear()),
+            "N" => Ok(self.DATA[2].clear()),
 
-             _  => (),
+             _  => Err(GenError::InvalidKind(kind.into())),
         }
 
     }
 
+
     /// Check the data
     #[inline]
     #[allow(non_snake_case)]
-    pub(crate) fn check_data(&self) -> Result<(), String> {
+    pub(crate) fn check_data(&self) -> Result<(), GenError> {
 
         let L = self.ltr_cnt.is_zero();
         let S = self.sbl_cnt.is_zero();
@@ -264,10 +276,12 @@ impl RandKey {
         if !(dl_L || ds_S || dn_N) {
             Ok(())
         } else {
-            Err("The corresponding character is missing!".into())
+            Err(GenError::MissChar)
         }
 
     }
+
+
 
     /// Delete the data
     /// # Example
@@ -281,10 +295,9 @@ impl RandKey {
     /// assert_eq!(r_p.data("N").unwrap(), vec!["2"]);
     /// ```
     #[inline]
-    pub fn del_item<T: IntoIterator+Clone>(&mut self, items: T)
+    pub fn del_item<T: IntoIterator+Clone>(&mut self, items: T) -> Result<(), GenError>
         where <T as IntoIterator>::Item: AsRef<str>
     {
-        use std::str::FromStr;
 
         let mut all = self.DATA.concat();
 
@@ -300,11 +313,13 @@ impl RandKey {
             if  v.iter().skip_while(|x| all.contains(&x.to_string())).next().is_none() {
                 all.retain(|x| !v.contains(&char::from_str(x).unwrap()));
                 self.DATA = group(all);
+
+                Ok(())
             } else {
-                panic!("Delete non-exist value!");
+                Err(GenError::DelNonExistValue)
             }
         } else {
-            panic!("Has non ASCII character(s)");
+            Err(GenError::InvalidChar)
         }
 
     }
@@ -325,10 +340,9 @@ impl RandKey {
     /// // One possible output: a0-0aaaaaa0-aaa
     /// ```
     #[inline]
-    pub fn add_item<T: IntoIterator+Clone>(&mut self, val: T)
+    pub fn add_item<T: IntoIterator+Clone>(&mut self, val: T) -> Result<(), GenError>
         where <T as IntoIterator>::Item: AsRef<str>
     {
-        use std::str::FromStr;
 
         if check_ascii(val.clone().into_iter()) {
             let val = group(val.clone().into_iter());
@@ -337,11 +351,13 @@ impl RandKey {
                 self.DATA[i].extend_from_slice(&val[i]);
                 self.DATA[i].dedup_by_key(|x| char::from_str(x).unwrap() as u8);
             }
+            Ok(())
         } else {
-            panic!("Has non-ASCII characters!");
+            Err(GenError::InvalidChar)
         }
 
     }
+
 
     /// Return a new `RandKey` which has the replaced data
     /// # Example
@@ -361,10 +377,9 @@ impl RandKey {
     /// ```
     #[inline]
     #[rustfmt::skip]
-    pub fn replace_data<T: IntoIterator+Clone>(&mut self, val: T) -> Result<(), String>
+    pub fn replace_data<T: IntoIterator+Clone>(&mut self, val: T) -> Result<(), GenError>
         where <T as IntoIterator>::Item: AsRef<str>
     {
-        use std::str::FromStr;
 
         if check_ascii(val.clone().into_iter()) {
 
@@ -389,7 +404,7 @@ impl RandKey {
             self.check_data()
 
         } else {
-            panic!("Has non ASCII character(s)");
+            Err(GenError::InvalidChar)
         }
     }
 
@@ -462,7 +477,7 @@ impl RandKey {
     /// assert_eq!(r_p.get_cnt("N"), 0.to_biguint());
     /// ```
     #[inline]
-    pub fn set_cnt(&mut self, kind: &str, val: impl ToBigUint) -> Result<(), String> {
+    pub fn set_cnt(&mut self, kind: &str, val: impl ToBigUint) -> Result<(), GenError> {
         match kind {
             "L" => {
                 self.ltr_cnt = val.to_biguint().unwrap();
@@ -480,7 +495,7 @@ impl RandKey {
                 Ok(())
             }
 
-            _ => Err(String::from("No such kind of field in RandKey!")),
+            _ => Err(GenError::InvalidKind(kind.into())),
         }
     }
 
@@ -499,40 +514,48 @@ impl RandKey {
     /// ```
     #[inline]
     #[rustfmt::skip]
-    pub fn join(&mut self) -> Result<(), String> {
+    pub fn join(&mut self) -> Result<(), GenError> {
 
         let mut inner_r_p = self.clone();
 
-        let unit = &inner_r_p.UNIT;
-        let data = &inner_r_p.DATA;
+        if Self::check_data(&inner_r_p).is_ok() {
+            let unit = &inner_r_p.UNIT;
+            let data = &inner_r_p.DATA;
 
-        // TODO: - Improve readability
-        let mut PWD =
-            vec![(&mut inner_r_p.ltr_cnt, &data[0]),
-                 (&mut inner_r_p.sbl_cnt, &data[1]),
-                 (&mut inner_r_p.num_cnt, &data[2]),]
-                .into_iter()
-                .map(|(bignum, data)| {
-                    _DIV_UNIT(unit, bignum)
-                    .par_iter()
-                    .map(|cnt| {
-                        _RAND_IDX(cnt, data.len())
-                            .iter()
-                            .map(|idx| data[*idx].clone())
-                            .collect::<String>()
+            // TODO: - Improve readability
+            let mut PWD =
+                vec![(&mut inner_r_p.ltr_cnt, &data[0]),
+                     (&mut inner_r_p.sbl_cnt, &data[1]),
+                     (&mut inner_r_p.num_cnt, &data[2]),]
+                    .into_iter()
+                    .map(|(bignum, data)| {
+                        _DIV_UNIT(unit, bignum)
+                            .par_iter()
+                            .map(|cnt| {
+                                _RAND_IDX(cnt, data.len())
+                                    .iter()
+                                    .map(|idx| data[*idx].clone())
+                                    .collect::<String>()
+                            })
+                            .collect()
                     })
-                    .collect()
-                })
-                .collect::<Vec<Vec<_>>>()
-                .concat()
-                .join("");
+                    .collect::<Vec<Vec<_>>>()
+                    .concat()
+                    .join("");
 
-        // This is absolutely safe, because they are all ASCII characters except control ones.
-        let bytes = unsafe { PWD.as_bytes_mut() };
-        bytes.shuffle(&mut thread_rng());
-        self.key = bytes.par_iter().map(|s| *s as char).collect::<String>();
+            // This is absolutely safe, because they are all ASCII characters except control ones.
+            let bytes = unsafe { PWD.as_bytes_mut() };
+            bytes.shuffle(&mut thread_rng());
+            self.key = bytes.par_iter().map(|s| *s as char).collect::<String>();
 
-        self.check_data()
+            Ok(())
+
+        } else {
+
+            Self::check_data(&inner_r_p)
+
+        }
+
     }
 
 }
