@@ -13,12 +13,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     if demands.is_empty() {
         r_p = RandKey::new(10, 2, 3);
-        r_p.delete(&["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"]).unwrap();
-        r_p.replace_data(&["1"]).unwrap();
-        // r_p.join();
-        // println!("{}", r_p);
-        println!("{:?}", r_p.data());
-
+        r_p.join()?;
+        println!("{}", r_p);
     } else {
         let ltr_cnt = demands[0].clone();
         let sbl_cnt = demands[1].clone();
@@ -28,14 +24,10 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         if demands.len() == 4 {
             let unit = demands[3].clone();
-
-            unsafe {
-                r_p.set_unit(unit)?;
-            }
-
+            r_p.set_unit(unit)?;
         }
 
-        r_p.join();
+        r_p.join()?;
 
         println!("{}", r_p);
     }

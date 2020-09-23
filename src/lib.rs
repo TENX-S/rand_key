@@ -35,7 +35,7 @@
 //! And we just need to hand this sequence to [rayon](https://github.com/rayon-rs/rayon) for processing.
 //! But the disadvantages are also obvious, if `UNIT` number is too small, like `1`,
 //! Threads did nothing useful! And capcity of the `Vec` is 1M at least!
-//! It will take up huge even all RAM and may harm your computer. **So `RandKey::set_unit()` is unsafe**
+//! It will take up huge even all RAM and may harm your computer.
 
 #![allow(non_snake_case)]
 
@@ -194,16 +194,17 @@ impl RandKey {
 
     /// [set a right `UNIT` number](https://docs.rs/rand_pwd/1.1.3/rand_pwd/#the-unit-field).
     #[inline]
-    pub unsafe fn set_unit(&mut self, val: impl ToBigUint) -> Result<(), &str> {
+    pub fn set_unit(&mut self, val: impl ToBigUint) -> Result<(), &str> {
+
         let val = val.to_biguint().unwrap();
 
         if val == BigUint::zero() {
             Err("Unit can not be zero!")
         } else {
             self.UNIT = val;
-
             Ok(())
         }
+
     }
 
 
@@ -233,7 +234,7 @@ impl RandKey {
     /// Check the data
     #[inline]
     #[allow(non_snake_case)]
-    pub fn check_data(&self) -> Result<(), String> {
+    pub(crate) fn check_data(&self) -> Result<(), String> {
 
         let L = self.ltr_cnt.is_zero();
         let S = self.sbl_cnt.is_zero();
@@ -263,7 +264,7 @@ impl RandKey {
     /// use rand_key::RandKey;
     /// ```
     #[inline]
-    pub fn delete<T: IntoIterator+Clone>(&mut self, items: T) -> Result<(), String>
+    pub fn delete<T: IntoIterator+Clone>(&mut self, items: T)
         where <T as IntoIterator>::Item: AsRef<str>
     {
         use std::str::FromStr;
@@ -289,7 +290,39 @@ impl RandKey {
             panic!("Has non ASCII character(s)");
         }
 
-        self.check_data()
+    }
+
+
+    /// Add data to the data set that `RandKey` carries
+    /// # Example
+    ///
+    /// Basic Usage:
+    /// ```
+    /// use rand_key::RandKey;
+    ///
+    /// let mut r_p = RandKey::new(10, 2, 3);
+    /// r_p.clear_all();
+    /// r_p.add_item(&["a", "0", "-"]);
+    /// r_p.join().unwrap();
+    /// println!("{}", r_p);
+    /// // One possible output: a0-0aaaaaa0-aaa
+    /// ```
+    #[inline]
+    pub fn add_item<T: IntoIterator+Clone>(&mut self, val: T)
+        where <T as IntoIterator>::Item: AsRef<str>
+    {
+        use std::str::FromStr;
+
+        if check_ascii(val.clone().into_iter()) {
+            let val = group(val.clone().into_iter());
+
+            for i in 0..=2 {
+                self.DATA[i].extend_from_slice(&val[i]);
+                self.DATA[i].dedup_by_key(|x| char::from_str(x).unwrap() as u8);
+            }
+        } else {
+            panic!("Has non-ASCII characters!");
+        }
 
     }
 
@@ -449,7 +482,7 @@ impl RandKey {
     /// ```
     #[inline]
     #[rustfmt::skip]
-    pub fn join(&mut self) {
+    pub fn join(&mut self) -> Result<(), String> {
 
         let mut inner_r_p = self.clone();
 
@@ -481,6 +514,8 @@ impl RandKey {
         let bytes = unsafe { PWD.as_bytes_mut() };
         bytes.shuffle(&mut thread_rng());
         self.key = bytes.par_iter().map(|s| *s as char).collect::<String>();
+
+        self.check_data()
     }
 
 }
