@@ -44,11 +44,9 @@ mod utils;
 mod error;
 
 
-
-
 use utils::*;
 use error::GenError;
-use std::str::FromStr;
+
 
 
 
@@ -100,9 +98,9 @@ impl RandKey {
               N: ToBigUint,
     {
         RandKey {
-            ltr_cnt: ltr_cnt.to_biguint().unwrap(),
-            sbl_cnt: sbl_cnt.to_biguint().unwrap(),
-            num_cnt: num_cnt.to_biguint().unwrap(),
+            ltr_cnt: as_biguint(ltr_cnt),
+            sbl_cnt: as_biguint(sbl_cnt),
+            num_cnt: as_biguint(num_cnt),
             key:     String::new(),
             UNIT:    BigUint::from(u16::MAX),
             DATA:    _DATA(),
@@ -153,7 +151,7 @@ impl RandKey {
     #[inline]
     #[rustfmt::skip]
     pub fn set_key(&mut self, val: &str, op: &str) -> Result<(), GenError> {
-        let (val_ltr_cnt, val_sbl_cnt, val_num_cnt) = _CNT(val);
+        let (val_ltr_cnt, val_sbl_cnt, val_num_cnt) = _CNT(val)?;
 
         match op {
 
@@ -206,7 +204,7 @@ impl RandKey {
     #[inline]
     pub fn set_unit(&mut self, val: impl ToBigUint) -> Result<(), GenError> {
 
-        let val = val.to_biguint().unwrap();
+        let val = as_biguint(val);
 
         if val == BigUint::zero() {
             Err(GenError::UnitNeZero)
@@ -305,13 +303,13 @@ impl RandKey {
 
             let mut v = items
                 .into_iter()
-                .map(|c| char::from_str(c.as_ref()).unwrap())
+                .map(|c| char_from_str(c))
                 .collect::<Vec<_>>();
 
             v.dedup_by_key(|x| char::clone(x) as u8);
 
             if  v.iter().skip_while(|x| all.contains(&x.to_string())).next().is_none() {
-                all.retain(|x| !v.contains(&char::from_str(x).unwrap()));
+                all.retain(|x| !v.contains(&char_from_str(x)));
                 self.DATA = group(all);
 
                 Ok(())
@@ -349,7 +347,7 @@ impl RandKey {
 
             for i in 0..self.DATA.len() {
                 self.DATA[i].extend_from_slice(&val[i]);
-                self.DATA[i].dedup_by_key(|x| char::from_str(x).unwrap() as u8);
+                self.DATA[i].dedup_by_key(|x| char_from_str(x) as u8);
             }
             Ok(())
         } else {
@@ -390,7 +388,7 @@ impl RandKey {
                 let mut num = vec![];
 
                 val.into_iter().for_each(|x| {
-                    let x = char::from_str(x.as_ref()).unwrap();
+                    let x = char_from_str(x);
 
                     if x.is_ascii_alphabetic()  { ltr.push(x.into()); }
                     if x.is_ascii_punctuation() { sbl.push(x.into()); }
@@ -477,23 +475,12 @@ impl RandKey {
     /// assert_eq!(r_p.get_cnt("N"), 0.to_biguint());
     /// ```
     #[inline]
+    #[rustfmt::skip]
     pub fn set_cnt(&mut self, kind: &str, val: impl ToBigUint) -> Result<(), GenError> {
         match kind {
-            "L" => {
-                self.ltr_cnt = val.to_biguint().unwrap();
-
-                Ok(())
-            }
-            "S" => {
-                self.sbl_cnt = val.to_biguint().unwrap();
-
-                Ok(())
-            }
-            "N" => {
-                self.num_cnt = val.to_biguint().unwrap();
-
-                Ok(())
-            }
+            "L" => { self.ltr_cnt = as_biguint(val); Ok(()) }
+            "S" => { self.sbl_cnt = as_biguint(val); Ok(()) }
+            "N" => { self.num_cnt = as_biguint(val); Ok(()) }
 
             _ => Err(GenError::InvalidKind(kind.into())),
         }
