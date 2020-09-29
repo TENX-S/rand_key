@@ -54,17 +54,17 @@ Here's a simple demo:
 ```rust
 use rand_key::{ RandKey, ToRandKey };
 
-fn main() {
+fn main() -> Box<dyn std::error::Error> {
 
-    let mut r_p = RandKey::new(10, 2, 3); // For now, it's empty. Use method `join` to generate the key
-    r_p.join();                           // Now `r_p` has some content, be kept in its `key` field
+    let mut r_p = RandKey::new("10", "2", "3")?; // For now, it's empty. Use method `join` to generate the key
+    r_p.join()?;                           // Now `r_p` has some content, be kept in its `key` field
     println!("{}", r_p);                  // Print it on the screen
     // One possible output: 7$pA7yMCw=2DPGN
 
     // Or you can build from an existing `&str` or `String`
     let mut r_p = RandKey::from("=tE)n5f`sidR>BV"); // 10 letters, 4 symbols, 1 number
     // You can re-generate a random key and with equivalent amount of letters, symbols and numbers. Like below:
-    r_p.join();
+    r_p.join()?;
     println!("{}", r_p);
     // One possible output: qS`Xlyhpmg~"V8[
 
