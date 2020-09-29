@@ -10,6 +10,7 @@ use super::error::GenError;
 
 
 
+
 /// Characters set
 ///
 /// return letters, symbols, numbers in `Vec<Vec<String>>`
@@ -133,17 +134,17 @@ pub(crate) fn group<T: IntoIterator>(v: T) -> Vec<Vec<String>>
 {
     let v:Vec<String> = v.into_iter().map(|x| x.as_ref().to_string()).collect();
 
-    let ltr = Mutex::new(Vec::new());
-    let sbl = Mutex::new(Vec::new());
-    let num = Mutex::new(Vec::new());
+    let ltr = Mutex::new(Vec::<String>::new());
+    let sbl = Mutex::new(Vec::<String>::new());
+    let num = Mutex::new(Vec::<String>::new());
 
     v.par_iter().for_each(|c| {
         let mut temp;
         let c = char::from_str(c).unwrap();
 
-        if c.is_ascii_alphabetic()  { temp = ltr.lock(); temp.push(c.clone().to_string()); }
-        if c.is_ascii_punctuation() { temp = sbl.lock(); temp.push(c.clone().to_string()); }
-        if c.is_ascii_digit()       { temp = num.lock(); temp.push(c.clone().to_string()); }
+        if c.is_ascii_alphabetic()  { temp = ltr.lock(); temp.push(c.clone().into()); }
+        if c.is_ascii_punctuation() { temp = sbl.lock(); temp.push(c.clone().into()); }
+        if c.is_ascii_digit()       { temp = num.lock(); temp.push(c.clone().into()); }
 
     });
 
@@ -155,5 +156,5 @@ pub(crate) fn group<T: IntoIterator>(v: T) -> Vec<Vec<String>>
 #[inline]
 pub(crate) fn char_from_str(s: impl AsRef<str>) -> char { char::from_str(s.as_ref()).unwrap() }
 
-#[inline]
-pub(crate) fn as_biguint(n: impl ToBigUint) -> BigUint { n.to_biguint().unwrap() }
+// #[inline]
+// pub(crate) fn as_biguint(n: impl ToBigUint) -> BigUint { n.to_biguint().unwrap() }

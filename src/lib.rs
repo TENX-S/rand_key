@@ -1,15 +1,15 @@
 //! # Usage:
 //! ```rust
-//! use rand_key::{ RandKey, ToRandKey };
-//! fn main() {
-//!     let mut r_p = RandKey::new(10, 2, 3); // For now, it's empty. Use method `join` to generate the password
-//!     r_p.join().unwrap();                           // Now `r_p` has some content, be kept in its `key` field
+//!     use rand_key::{ RandKey, ToRandKey };
+//! # fn main() -> Result<(), Box<dyn std::error::Error>>{
+//!     let mut r_p = RandKey::new("10", "2", "3")?; // For now, it's empty. Use method `join` to generate the password
+//!     r_p.join()?;                           // Now `r_p` has some content, be kept in its `key` field
 //!     println!("{}", r_p);                  // Print it on the screen
 //!     // One possible output: 7$pA7yMCw=2DPGN
 //!     // Or you can build from an existing `&str`
 //!     let mut r_p = RandKey::from("=tE)n5f`sidR>BV"); // 10 letters, 4 symbols, 1 number
 //!     // You can rebuild a random password and with equivalent amount of letters, symbols and numbers. Like below
-//!     r_p.join().unwrap();
+//!     r_p.join()?;
 //!     println!("{}", r_p);
 //!     // One possible output: qS`Xlyhpmg~"V8[
 //!     // All the `String` and `&str` has implemented trait `ToRandKey`
@@ -18,7 +18,8 @@
 //!     // Panic! Has non-ASCII character(s)!
 //!     // let mut r_p = RandKey::from("🦀️🦀️🦀️");
 //!     // let mut r_p = "🦀️🦀️🦀️".to_RandKey();
-//! }
+//!     Ok(())
+//! # }
 //! ```
 //! # The `UNIT` field
 //! The UNIT field is used to help process large number in concurrent way.
@@ -38,6 +39,9 @@
 //! It will take up huge even all RAM and may harm your computer.
 
 #![allow(non_snake_case)]
+#![allow(broken_intra_doc_links)]
+#![feature(associated_type_defaults)]
+#![deny(rust_2018_idioms, unused, dead_code)]
 
 mod prelude;
 mod utils;
@@ -46,8 +50,7 @@ mod error;
 
 use utils::*;
 use error::GenError;
-
-
+use crate::prelude::AsBiguint;
 
 
 /// struct `RandKey`
@@ -65,7 +68,8 @@ pub struct RandKey {
 /// A generic trait for converting a value to a `RandKey`.
 pub trait ToRandKey {
     /// Converts the value of `self` to a `RandKey`.
-    fn to_randkey(&self) -> RandKey;
+    type Output = RandKey;
+    fn to_randkey(&self) -> Self::Output;
 }
 
 
@@ -75,36 +79,38 @@ impl RandKey {
     ///
     /// Basic usage:
     /// ```
-    /// use rand_key::RandKey;
-    /// use num_bigint::BigUint;
-    /// let mut r_p = RandKey::new(11, 4, 2);
-    ///
-    /// // If you want push a large number in it
-    /// // parse the `&str` into `BigUint`
-    /// use std::str::FromStr;
-    ///
-    /// let ltr_cnt = BigUint::from_str(&format!("{}000", usize::MAX)).unwrap();
-    /// let sbl_cnt = BigUint::from_str(&format!("{}000", usize::MAX)).unwrap();
-    /// let num_cnt = BigUint::from_str(&format!("{}000", usize::MAX)).unwrap();
-    ///
-    /// r_p = RandKey::new(ltr_cnt, sbl_cnt, num_cnt);
-    ///
-    /// // You can also mix the `BigUint` with primitive type
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    ///     use rand_key::RandKey;
+    ///     let mut r_p = RandKey::new("11", "4", "2")?;
+    /// #   Ok(())
+    /// # }
     /// ```
     #[inline]
-    pub fn new<L, S, N>(ltr_cnt: L, sbl_cnt: S, num_cnt: N) -> Self
-        where L: ToBigUint,
-              S: ToBigUint,
-              N: ToBigUint,
+    pub fn new<L, S, N>(ltr_cnt: L, sbl_cnt: S, num_cnt: N) -> Result<Self, GenError>
+        where L: AsRef<str>, S: AsRef<str>, N: AsRef<str>,
     {
-        RandKey {
-            ltr_cnt: as_biguint(ltr_cnt),
-            sbl_cnt: as_biguint(sbl_cnt),
-            num_cnt: as_biguint(num_cnt),
-            key:     String::new(),
-            UNIT:    BigUint::from(u16::MAX),
-            DATA:    _DATA(),
+
+        if Self::check_init((&ltr_cnt, &sbl_cnt, &num_cnt)) {
+            Ok(RandKey {
+                ltr_cnt: ltr_cnt.as_biguint()?,
+                sbl_cnt: sbl_cnt.as_biguint()?,
+                num_cnt: num_cnt.as_biguint()?,
+                key: String::new(),
+                UNIT: BigUint::from(u16::MAX),
+                DATA: _DATA(),
+            })
+        } else {
+            Err(GenError::InvalidNumber)
         }
+
+    }
+
+
+    #[inline]
+    pub(crate) fn check_init<L, S, N>(input: (L, S, N)) -> bool
+        where L: AsRef<str>, S: AsRef<str>, N: AsRef<str>,
+    {
+        input.0.as_biguint().is_ok() && input.1.as_biguint().is_ok() && input.2.as_biguint().is_ok()
     }
 
 
@@ -114,10 +120,11 @@ impl RandKey {
     /// Basic usage:
     /// ```
     /// use rand_key::RandKey;
-    ///
-    /// let r_p = RandKey::new(10, 2, 3);
-    ///
-    /// assert_eq!("", r_p.key())
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let r_p = RandKey::new("10", "2", "3")?;
+    /// assert_eq!("", r_p.key());
+    /// # Ok(())
+    /// # }
     /// ```
     #[inline]
     pub fn key(&self) -> &str { &self.key }
@@ -134,23 +141,24 @@ impl RandKey {
     /// Basic usage:
     /// ```
     /// use rand_key::RandKey;
-    /// use num_traits::ToPrimitive;
-    /// use num_bigint::BigUint;
-    ///
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// // update
-    /// let mut r_p = RandKey::new(10, 2, 3);
+    /// let mut r_p = RandKey::new("10", "2", "3")?;
     ///
     /// assert!(r_p.set_key("123456", "update").is_ok());
     ///
     /// // check
-    /// let mut r_p = RandKey::new(10, 2, 3);
+    /// let mut r_p = RandKey::new("10", "2", "3")?;
     ///
     /// assert!(r_p.set_key("]EH1zyqx3Bl/F8a", "check").is_ok());
     /// assert!(r_p.set_key("123456", "check").is_err());
+    /// # Ok(())
+    /// # }
     /// ```
     #[inline]
     #[rustfmt::skip]
     pub fn set_key(&mut self, val: &str, op: &str) -> Result<(), GenError> {
+
         let (val_ltr_cnt, val_sbl_cnt, val_num_cnt) = _CNT(val)?;
 
         match op {
@@ -174,7 +182,7 @@ impl RandKey {
 
                     Ok(())
                 } else {
-                    Err(GenError::InvalidField(val.into()))
+                    Err(GenError::InvalidOperation(val.into()))
                 }
             }
 
@@ -189,25 +197,27 @@ impl RandKey {
     ///
     /// Basic Usage:
     /// ```
-    /// use num_traits::One;
     /// use rand_key::RandKey;
-    /// use num_bigint::BigUint;
     ///
-    /// let r_p = RandKey::new(10, 2, 3); // The default value of unit is 65536
-    /// assert_eq!(r_p.unit().clone(), BigUint::from(u16::MAX));
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let r_p = RandKey::new("10", "2", "3")?;
+    /// // The default value of unit is 65535
+    /// assert_eq!(&r_p.unit(), "65535");
+    /// # Ok(())
+    /// # }
     /// ```
     #[inline]
-    pub fn unit(&self) -> &BigUint { &self.UNIT }
+    pub fn unit(&self) -> String { self.UNIT.to_string() }
 
 
     /// [set a right `UNIT` number](https://docs.rs/rand_pwd/1.1.3/rand_pwd/#the-unit-field).
     #[inline]
-    pub fn set_unit(&mut self, val: impl ToBigUint) -> Result<(), GenError> {
+    pub fn set_unit(&mut self, val: impl AsRef<str>) -> Result<(), GenError> {
 
-        let val = as_biguint(val);
+        let val = val.as_biguint()?;
 
         if val == BigUint::zero() {
-            Err(GenError::UnitNeZero)
+            Err(GenError::InvalidUnit)
         } else {
             self.UNIT = val;
             Ok(())
@@ -242,7 +252,6 @@ impl RandKey {
     /// Clear the letters, symbols or numbers
     #[inline]
     pub fn clear(&mut self, kind: &str) -> Result<(), GenError>{
-
         match kind {
             "L" => Ok(self.DATA[0].clear()),
             "S" => Ok(self.DATA[1].clear()),
@@ -250,7 +259,6 @@ impl RandKey {
 
              _  => Err(GenError::InvalidKind(kind.into())),
         }
-
     }
 
 
@@ -280,17 +288,20 @@ impl RandKey {
     }
 
 
-
     /// Delete the data
     /// # Example
     ///
     /// Basic Usage
     /// ```
     /// use rand_key::RandKey;
-    /// let mut r_p = RandKey::new(10 ,2 ,3);
+    ///
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let mut r_p = RandKey::new("10" ,"2" ,"3")?;
     /// r_p.replace_data(&["1", "2", "a", "-"]);
     /// r_p.del_item(&["1"]);
-    /// assert_eq!(r_p.data("N").unwrap(), vec!["2"]);
+    /// assert_eq!(r_p.data("N")?, vec!["2"]);
+    /// # Ok(())
+    /// # }
     /// ```
     #[inline]
     pub fn del_item<T: IntoIterator+Clone>(&mut self, items: T) -> Result<(), GenError>
@@ -330,12 +341,15 @@ impl RandKey {
     /// ```
     /// use rand_key::RandKey;
     ///
-    /// let mut r_p = RandKey::new(10, 2, 3);
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let mut r_p = RandKey::new("10", "2", "3")?;
     /// r_p.clear_all();
     /// r_p.add_item(&["a", "0", "-"]);
     /// r_p.join().unwrap();
     /// println!("{}", r_p);
     /// // One possible output: a0-0aaaaaa0-aaa
+    /// # Ok(())
+    /// # }
     /// ```
     #[inline]
     pub fn add_item<T: IntoIterator+Clone>(&mut self, val: T) -> Result<(), GenError>
@@ -363,15 +377,19 @@ impl RandKey {
     /// Basic usage:
     /// ```
     /// use rand_key::RandKey;
-    /// let mut r_p = RandKey::new(10, 2, 3);
+    ///
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let mut r_p = RandKey::new("10", "2", "3")?;
     /// // Missing some kinds of characters will get an Err value
     /// assert!(r_p.replace_data(&["1"]).is_err());
     /// assert!(r_p.replace_data(&["a"]).is_err());
     /// assert!(r_p.replace_data(&["-"]).is_err());
     /// assert!(r_p.replace_data(&["1", "a", "."]).is_ok());
-    /// r_p.join();
+    /// r_p.join()?;
     /// println!("{}", r_p);
     /// // One possible output: .aa1a1aaaa.a1aa
+    /// # Ok(())
+    /// # }
     /// ```
     #[inline]
     #[rustfmt::skip]
@@ -406,25 +424,30 @@ impl RandKey {
         }
     }
 
+
     /// Returns the length of this `RandKey`, in both bytes and [char]s.
     /// # Example
     ///
     /// Basic usage:
     /// ```
     /// use rand_key::RandKey;
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let mut r_p = RandKey::new("10", "2", "3")?;
     ///
-    /// let mut r_p = RandKey::new(10, 2, 3);
-    ///
-    /// r_p.join();
+    /// r_p.join()?;
     ///
     /// assert_eq!(r_p.len(), 15);
+    /// # Ok(())
+    /// # }
     /// ```
     #[inline]
-    pub fn len(&self) -> usize { self.key.len() }
+    pub fn len(&self) -> String { self.key.len().to_string() }
+
 
     /// Returns true if this `RandKey` has a length of zero, and false otherwise.
     #[inline]
     pub fn is_empty(&self) -> bool { self.key.is_empty() }
+
 
     /// Get count of `RandKey`
     /// # Example
@@ -432,25 +455,26 @@ impl RandKey {
     /// Basic usage:
     /// ```
     /// use rand_key::RandKey;
-    /// use num_bigint::ToBigUint;
-    /// use num_traits::ToPrimitive;
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let r_p = RandKey::new("10", "2", "3")?;
     ///
-    /// let r_p = RandKey::new(10, 2, 3);
-    ///
-    /// assert_eq!(r_p.get_cnt("L"), 10.to_biguint());
-    /// assert_eq!(r_p.get_cnt("S"), 2.to_biguint());
-    /// assert_eq!(r_p.get_cnt("N"), 3.to_biguint());
+    /// assert_eq!(r_p.get_cnt("L"), Some("10".to_string()));
+    /// assert_eq!(r_p.get_cnt("S"), Some("2".to_string()));
+    /// assert_eq!(r_p.get_cnt("N"), Some("3".to_string()));
+    /// # Ok(())
+    /// # }
     /// ```
     #[inline]
-    pub fn get_cnt(&self, kind: &str) -> Option<BigUint> {
+    pub fn get_cnt(&self, kind: &str) -> Option<String> {
         match kind {
-            "L" => Some(self.ltr_cnt.clone()),
-            "S" => Some(self.sbl_cnt.clone()),
-            "N" => Some(self.num_cnt.clone()),
+            "L" => Some(self.ltr_cnt.to_string()),
+            "S" => Some(self.sbl_cnt.to_string()),
+            "N" => Some(self.num_cnt.to_string()),
 
-            _ => None,
+             _  => None,
         }
     }
+
 
     /// Change the count of letters, symbols or numbers of `RandKey`
     /// # Example
@@ -458,33 +482,36 @@ impl RandKey {
     /// Basic usage:
     /// ```
     /// use rand_key::*;
-    /// use num_bigint::ToBigUint;
     ///
-    /// let mut r_p = RandKey::new(10, 2, 3);
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let mut r_p = RandKey::new("10", "2", "3")?;
     ///
     /// // Set the letter's count
-    /// r_p.set_cnt("L", 20);
-    /// assert_eq!(r_p.get_cnt("L"), 20.to_biguint());
+    /// r_p.set_cnt("L", "20");
+    /// assert_eq!(r_p.get_cnt("L"), Some("20".to_string()));
     ///
     /// // Set the symbol's count
-    /// r_p.set_cnt("S", 1000);
-    /// assert_eq!(r_p.get_cnt("S"), 1000.to_biguint());
+    /// r_p.set_cnt("S", "1000");
+    /// assert_eq!(r_p.get_cnt("S"), Some("1000".to_string()));
     ///
     /// // Set the number's count
-    /// r_p.set_cnt("N", 0);
-    /// assert_eq!(r_p.get_cnt("N"), 0.to_biguint());
+    /// r_p.set_cnt("N", "0");
+    /// assert_eq!(r_p.get_cnt("N"), Some("0".to_string()));
+    /// # Ok(())
+    /// # }
     /// ```
     #[inline]
     #[rustfmt::skip]
-    pub fn set_cnt(&mut self, kind: &str, val: impl ToBigUint) -> Result<(), GenError> {
+    pub fn set_cnt(&mut self, kind: &str, val: impl AsRef<str>) -> Result<(), GenError> {
         match kind {
-            "L" => { self.ltr_cnt = as_biguint(val); Ok(()) }
-            "S" => { self.sbl_cnt = as_biguint(val); Ok(()) }
-            "N" => { self.num_cnt = as_biguint(val); Ok(()) }
+            "L" => { self.ltr_cnt = val.as_biguint()?; Ok(()) }
+            "S" => { self.sbl_cnt = val.as_biguint()?; Ok(()) }
+            "N" => { self.num_cnt = val.as_biguint()?; Ok(()) }
 
             _ => Err(GenError::InvalidKind(kind.into())),
         }
     }
+
 
     /// Generate the password for `RandKey`
     /// # Example
@@ -493,11 +520,12 @@ impl RandKey {
     /// ```
     /// use rand_key::RandKey;
     ///
-    /// let mut r_p = RandKey::new(10, 2, 3);
-    ///
-    /// r_p.join();
-    ///
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let mut r_p = RandKey::new("10", "2", "3")?;
+    /// r_p.join()?;
     /// println!("{}", r_p);
+    /// # Ok(())
+    /// # }
     /// ```
     #[inline]
     #[rustfmt::skip]
@@ -538,11 +566,8 @@ impl RandKey {
             Ok(())
 
         } else {
-
             Self::check_data(&inner_r_p)
-
         }
-
     }
 
 }

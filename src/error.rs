@@ -1,4 +1,3 @@
-
 use thiserror::Error;
 
 
@@ -13,16 +12,19 @@ pub enum GenError {
     #[error("Delete non-exist value!")]
     DelNonExistValue,
 
-    #[error("Non ASCII character")]
+    #[error("Require ASCII characters excluded control ones")]
     InvalidChar,
 
-    #[error("No `{0}` kind of field in `RandKey`")]
+    #[error("Require Non-negative integer in `&str`")]
+    InvalidNumber,
+
+    #[error("Require a existed kind: `L`, `S` or `N`")]
     InvalidKind(String),
 
-    #[error("The `{0}` field is invalid")]
-    InvalidField(String),
+    #[error("Require a defined operation: `update` or `check`")]
+    InvalidOperation(String),
 
-    #[error("Unit can not be zero")]
-    UnitNeZero,
+    #[error("Require unit to be non-negative")]
+    InvalidUnit,
 
 }

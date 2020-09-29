@@ -80,7 +80,7 @@ fn main() {
 ```
 
 
-#### License
+### License
 
 <sup>
 Licensed under either of <a href="LICENSE-APACHE">Apache License, Version
