@@ -75,7 +75,7 @@ fn main() -> Box<dyn std::error::Error> {
 
     // let mut r_p = RandPwd::from("🦀️🦀️🦀️");
     // let mut r_p = "🦀️🦀️🦀️".to_randkey();
-    // Panic! Has non-ASCII character(s)!
+    // Err! Has non-ASCII character(s)!
 }
 ```
 

@@ -239,7 +239,7 @@ impl RandKey {
             "S" => Ok(self.DATA[1].clone()),
             "N" => Ok(self.DATA[2].clone()),
 
-             _  => Err(GenError::InvalidKind(kind.into())),
+             _  => Err(GenError::InvalidKind),
         }
     }
 
@@ -257,7 +257,7 @@ impl RandKey {
             "S" => Ok(self.DATA[1].clear()),
             "N" => Ok(self.DATA[2].clear()),
 
-             _  => Err(GenError::InvalidKind(kind.into())),
+             _  => Err(GenError::InvalidKind),
         }
     }
 
@@ -508,7 +508,7 @@ impl RandKey {
             "S" => { self.sbl_cnt = val.as_biguint()?; Ok(()) }
             "N" => { self.num_cnt = val.as_biguint()?; Ok(()) }
 
-            _ => Err(GenError::InvalidKind(kind.into())),
+            _ => Err(GenError::InvalidKind),
         }
     }
 

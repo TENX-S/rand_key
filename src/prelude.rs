@@ -56,14 +56,19 @@ impl Add for RandKey {
     /// ```
     #[inline]
     fn add(self, rhs: Self) -> Self {
+
+        let mut result_data = self.clone();
+        result_data.add_item(rhs.DATA.concat()).unwrap();
+
         RandKey {
             ltr_cnt: self.ltr_cnt + rhs.ltr_cnt,
             sbl_cnt: self.sbl_cnt + rhs.sbl_cnt,
             num_cnt: self.num_cnt + rhs.num_cnt,
-            key:         self.key + &rhs.key,
+            key:     self.key + &rhs.key,
             UNIT:    self.UNIT,
-            DATA:    Default::default(),
+            DATA:    result_data.DATA,
         }
+
     }
 }
 
@@ -89,10 +94,15 @@ impl AddAssign for RandKey {
     /// ```
     #[inline]
     fn add_assign(&mut self, rhs: Self) {
+
+        let mut result_data = self.clone();
+        result_data.add_item(rhs.DATA.concat()).unwrap();
+
+        self.key += &rhs.key;
         self.ltr_cnt += rhs.ltr_cnt;
         self.sbl_cnt += rhs.sbl_cnt;
         self.num_cnt += rhs.num_cnt;
-            self.key += &rhs.key;
+        self.DATA = result_data.DATA;
     }
 }
 

@@ -4,9 +4,9 @@ pub use num_bigint::{BigUint, ToBigUint};
 pub use num_traits::{Zero, One, ToPrimitive};
 
 
-use std::str::FromStr;
+use std::{str::FromStr, sync::{Arc, atomic::{AtomicUsize, Ordering}},};
 use parking_lot::Mutex;
-use super::error::GenError;
+use crate::error::GenError;
 
 
 
@@ -43,9 +43,9 @@ pub(crate) fn _DATA() -> Vec<Vec<String>> {
 #[rustfmt::skip]
 pub(crate) fn _CNT(content: impl AsRef<str>) -> Result<(BigUint, BigUint, BigUint), GenError> {
 
-    let l = Mutex::new(0);
-    let s = Mutex::new(0);
-    let n = Mutex::new(0);
+    let l = Arc::new(AtomicUsize::new(0));
+    let s = Arc::new(AtomicUsize::new(0));
+    let n = Arc::new(AtomicUsize::new(0));
 
     content.as_ref()
            .chars()
@@ -55,16 +55,16 @@ pub(crate) fn _CNT(content: impl AsRef<str>) -> Result<(BigUint, BigUint, BigUin
                if x.is_ascii() {
                    let mut temp;
 
-                   if x.is_ascii_alphabetic()  { temp = l.lock(); *temp += 1; }
-                   if x.is_ascii_punctuation() { temp = s.lock(); *temp += 1; }
-                   if x.is_ascii_digit()       { temp = n.lock(); *temp += 1; }
+                   if x.is_ascii_alphabetic()  { temp = l.clone(); temp.fetch_add(1, Ordering::SeqCst); }
+                   if x.is_ascii_punctuation() { temp = s.clone(); temp.fetch_add(1, Ordering::SeqCst); }
+                   if x.is_ascii_digit()       { temp = n.clone(); temp.fetch_add(1, Ordering::SeqCst); }
 
                }
            });
 
-    let l = l.into_inner().to_biguint().unwrap();
-    let s = s.into_inner().to_biguint().unwrap();
-    let n = n.into_inner().to_biguint().unwrap();
+    let l = l.load(Ordering::SeqCst).to_biguint().unwrap();
+    let s = s.load(Ordering::SeqCst).to_biguint().unwrap();
+    let n = n.load(Ordering::SeqCst).to_biguint().unwrap();
 
     if &l+&s+&n != content.as_ref().len().to_biguint().unwrap() {
         Err(GenError::InvalidChar)
@@ -155,6 +155,3 @@ pub(crate) fn group<T: IntoIterator>(v: T) -> Vec<Vec<String>>
 
 #[inline]
 pub(crate) fn char_from_str(s: impl AsRef<str>) -> char { char::from_str(s.as_ref()).unwrap() }
-
-// #[inline]
-// pub(crate) fn as_biguint(n: impl ToBigUint) -> BigUint { n.to_biguint().unwrap() }
