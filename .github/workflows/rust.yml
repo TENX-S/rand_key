@@ -11,8 +11,8 @@ env:
 
 jobs:
   build_and_test:
-    name: Rust project
-    runs-on: ubuntu-latest
+    name: Ubuntu Test
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@master
       - uses: actions-rs/cargo@v1
@@ -22,4 +22,3 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: test
-          arguments: --release
