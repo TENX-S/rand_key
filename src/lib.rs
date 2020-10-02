@@ -85,7 +85,7 @@ pub enum ASCIIExcludeCtrl {
 
 
 impl RandKey {
-    /// Return an empty instance of `Result<RandKey, &'static str>`
+    /// Return an empty instance of `Result<RandKey, impl Error>`
     /// # Example
     ///
     /// Basic usage:

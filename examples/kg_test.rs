@@ -1,6 +1,6 @@
 use rand_key::RandKey;
 use std::{env::args, error::Error};
-
+use std::time::Instant;
 
 
 
@@ -10,10 +10,12 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let mut r_p;
 
+
     if demands.is_empty() {
+
         r_p = RandKey::new("10", "2", "3")?;
         r_p.join()?;
-        println!("{}", r_p);
+        print!("{}", r_p);
     } else {
         let ltr_cnt = &demands[0];
         let sbl_cnt = &demands[1];
@@ -28,7 +30,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         r_p.join()?;
 
-        println!("{}", r_p);
+        print!("{}", r_p);
     }
 
     Ok(())
