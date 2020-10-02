@@ -35,7 +35,6 @@
 //! It will take up huge even all RAM and may harm your computer.
 
 
-#![feature(associated_type_defaults)]
 #![deny(unused, dead_code, rust_2018_idioms,)]
 #![allow(non_snake_case, broken_intra_doc_links,)]
 
@@ -66,7 +65,7 @@ pub struct RandKey {
 /// A generic trait for converting a value to a `RandKey`.
 pub trait ToRandKey {
     /// Converts the value of `self` to a `RandKey`.
-    type Output = Option<RandKey>;
+    type Output;
     fn to_randkey(&self) -> Self::Output;
 }
 
