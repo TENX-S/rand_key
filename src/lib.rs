@@ -1,24 +1,20 @@
 //! # Usage:
 //! ```rust
 //!     use rand_key::{ RandKey, ToRandKey };
-//! # fn main() -> Result<(), Box<dyn std::error::Error>>{
+//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //!     let mut r_p = RandKey::new("10", "2", "3")?; // For now, it's empty. Use method `join` to generate the password
 //!     r_p.join()?;                           // Now `r_p` has some content, be kept in its `key` field
 //!     println!("{}", r_p);                  // Print it on the screen
 //!     // One possible output: 7$pA7yMCw=2DPGN
 //!     // Or you can build from an existing `&str`
-//!     let mut r_p = RandKey::from("=tE)n5f`sidR>BV"); // 10 letters, 4 symbols, 1 number
+//!     let mut r_p = "=tE)n5f`sidR>BV".to_randkey().unwrap(); // 10 letters, 4 symbols, 1 number
 //!     // You can rebuild a random password and with equivalent amount of letters, symbols and numbers. Like below
 //!     r_p.join()?;
 //!     println!("{}", r_p);
 //!     // One possible output: qS`Xlyhpmg~"V8[
-//!     // All the `String` and `&str` has implemented trait `ToRandKey`
-//!     // which means you can use method `to_RandKey` to convert a `String` or `&str` to `RandKey`
-//!     let mut r_p = "n4jpstv$dI,.z'K".to_randkey();
 //!     // Panic! Has non-ASCII character(s)!
-//!     // let mut r_p = RandKey::from("🦀️🦀️🦀️");
 //!     // let mut r_p = "🦀️🦀️🦀️".to_RandKey();
-//!     Ok(())
+//! #   Ok(())
 //! # }
 //! ```
 //! # The `UNIT` field
@@ -38,10 +34,11 @@
 //! Threads did nothing useful! And capcity of the `Vec` is 1M at least!
 //! It will take up huge even all RAM and may harm your computer.
 
-#![allow(non_snake_case)]
-#![allow(broken_intra_doc_links)]
+
 #![feature(associated_type_defaults)]
-#![deny(rust_2018_idioms, unused, dead_code)]
+#![deny(unused, dead_code, rust_2018_idioms,)]
+#![allow(non_snake_case, broken_intra_doc_links,)]
+
 
 mod prelude;
 mod utils;
@@ -50,6 +47,7 @@ mod error;
 
 use utils::*;
 use error::GenError;
+use self::ASCIIExcludeCtrl::*;
 use crate::prelude::AsBiguint;
 
 
@@ -68,8 +66,21 @@ pub struct RandKey {
 /// A generic trait for converting a value to a `RandKey`.
 pub trait ToRandKey {
     /// Converts the value of `self` to a `RandKey`.
-    type Output = RandKey;
+    type Output = Option<RandKey>;
     fn to_randkey(&self) -> Self::Output;
+}
+
+
+pub enum SetRandKeyOp {
+    Update,
+    Check,
+}
+
+
+pub enum ASCIIExcludeCtrl {
+    Alphabetic,
+    Punctuation,
+    Digit,
 }
 
 
@@ -95,9 +106,9 @@ impl RandKey {
                 ltr_cnt: ltr_cnt.as_biguint()?,
                 sbl_cnt: sbl_cnt.as_biguint()?,
                 num_cnt: num_cnt.as_biguint()?,
-                key: String::new(),
-                UNIT: BigUint::from(u16::MAX),
-                DATA: _DATA(),
+                key:     String::new(),
+                UNIT:    BigUint::from(u16::MAX),
+                DATA:    _DATA(),
             })
         } else {
             Err(GenError::InvalidNumber)
@@ -130,40 +141,40 @@ impl RandKey {
     pub fn key(&self) -> &str { &self.key }
 
 
-    /// Change the key of `RandKey`, in the way of the name of operation.
-    /// There are two operations: **update** and **check**
+    /// Set the key of `RandKey`, depend on the name of operation.
     ///
-    /// * **update** : Replace the value you've passed and update the field.
+    /// * **Update** : Replace the key you've passed and update the field.
     ///
-    /// * **check** : If the field of new value doesn't match the old one, it will return an `Err` or the old `key` will be replaced.
+    /// * **Check** : If the field of new value doesn't match the old one, it will return an `Err` or the old `key` will be replaced.
     /// # Example
     ///
     /// Basic usage:
     /// ```
-    /// use rand_key::RandKey;
+    /// use rand_key::{RandKey, SetRandKeyOp::*};
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// // update
     /// let mut r_p = RandKey::new("10", "2", "3")?;
     ///
-    /// assert!(r_p.set_key("123456", "update").is_ok());
+    /// assert!(r_p.set_key("123456", Update).is_ok());
     ///
     /// // check
     /// let mut r_p = RandKey::new("10", "2", "3")?;
     ///
-    /// assert!(r_p.set_key("]EH1zyqx3Bl/F8a", "check").is_ok());
-    /// assert!(r_p.set_key("123456", "check").is_err());
+    /// assert!(r_p.set_key("]EH1zyqx3Bl/F8a", Check).is_ok());
+    /// assert!(r_p.set_key("123456", Check).is_err());
     /// # Ok(())
     /// # }
     /// ```
     #[inline]
     #[rustfmt::skip]
-    pub fn set_key(&mut self, val: &str, op: &str) -> Result<(), GenError> {
+    pub fn set_key(&mut self, val: &str, op: SetRandKeyOp) -> Result<(), GenError> {
 
+        use self::SetRandKeyOp::*;
         let (val_ltr_cnt, val_sbl_cnt, val_num_cnt) = _CNT(val)?;
 
         match op {
 
-            "update" => {
+            Update => {
                 self.ltr_cnt = val_ltr_cnt;
                 self.sbl_cnt = val_sbl_cnt;
                 self.num_cnt = val_num_cnt;
@@ -172,21 +183,20 @@ impl RandKey {
                 Ok(())
             }
 
-            "check" => {
+            Check => {
                 if (&self.ltr_cnt,
                     &self.sbl_cnt,
-                    &self.num_cnt) == (&val_ltr_cnt,
-                                       &val_sbl_cnt,
-                                       &val_num_cnt) {
+                    &self.num_cnt,) == (&val_ltr_cnt,
+                                        &val_sbl_cnt,
+                                        &val_num_cnt,) {
                     self.key = val.into();
 
                     Ok(())
                 } else {
-                    Err(GenError::InvalidOperation(val.into()))
+                    Err(GenError::InconsistentField)
                 }
             }
 
-            _ => Ok(()),
         }
 
     }
@@ -233,13 +243,11 @@ impl RandKey {
 
     /// Return data depend on given kind
     #[inline]
-    pub fn data(&self, kind: &str) -> Result<Vec<String>, GenError> {
+    pub fn data(&self, kind: ASCIIExcludeCtrl) -> &[String] {
         match kind {
-            "L" => Ok(self.DATA[0].clone()),
-            "S" => Ok(self.DATA[1].clone()),
-            "N" => Ok(self.DATA[2].clone()),
-
-             _  => Err(GenError::InvalidKind),
+            Alphabetic  => &self.DATA[0],
+            Punctuation => &self.DATA[1],
+            Digit       => &self.DATA[2],
         }
     }
 
@@ -251,13 +259,11 @@ impl RandKey {
 
     /// Clear the letters, symbols or numbers
     #[inline]
-    pub fn clear(&mut self, kind: &str) -> Result<(), GenError>{
+    pub fn clear(&mut self, kind: ASCIIExcludeCtrl) {
         match kind {
-            "L" => Ok(self.DATA[0].clear()),
-            "S" => Ok(self.DATA[1].clear()),
-            "N" => Ok(self.DATA[2].clear()),
-
-             _  => Err(GenError::InvalidKind),
+            Alphabetic  => self.DATA[0].clear(),
+            Punctuation => self.DATA[1].clear(),
+            Digit       => self.DATA[2].clear(),
         }
     }
 
@@ -293,13 +299,13 @@ impl RandKey {
     ///
     /// Basic Usage
     /// ```
-    /// use rand_key::RandKey;
+    /// use rand_key::{RandKey, ASCIIExcludeCtrl::*};
     ///
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let mut r_p = RandKey::new("10" ,"2" ,"3")?;
     /// r_p.replace_data(&["1", "2", "a", "-"]);
     /// r_p.del_item(&["1"]);
-    /// assert_eq!(r_p.data("N")?, vec!["2"]);
+    /// assert_eq!(r_p.data(Digit), vec!["2"]);
     /// # Ok(())
     /// # }
     /// ```
@@ -436,7 +442,7 @@ impl RandKey {
     ///
     /// r_p.join()?;
     ///
-    /// assert_eq!(r_p.len(), 15);
+    /// assert_eq!(&r_p.len(), "15");
     /// # Ok(())
     /// # }
     /// ```
@@ -454,24 +460,22 @@ impl RandKey {
     ///
     /// Basic usage:
     /// ```
-    /// use rand_key::RandKey;
+    /// use rand_key::{RandKey, ASCIIExcludeCtrl::*};
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let r_p = RandKey::new("10", "2", "3")?;
     ///
-    /// assert_eq!(r_p.get_cnt("L"), Some("10".to_string()));
-    /// assert_eq!(r_p.get_cnt("S"), Some("2".to_string()));
-    /// assert_eq!(r_p.get_cnt("N"), Some("3".to_string()));
+    /// assert_eq!(&r_p.get_cnt(Alphabetic), "10");
+    /// assert_eq!(&r_p.get_cnt(Punctuation), "2");
+    /// assert_eq!(&r_p.get_cnt(Digit),       "3");
     /// # Ok(())
     /// # }
     /// ```
     #[inline]
-    pub fn get_cnt(&self, kind: &str) -> Option<String> {
+    pub fn get_cnt(&self, kind: ASCIIExcludeCtrl) -> String {
         match kind {
-            "L" => Some(self.ltr_cnt.to_string()),
-            "S" => Some(self.sbl_cnt.to_string()),
-            "N" => Some(self.num_cnt.to_string()),
-
-             _  => None,
+            Alphabetic  => self.ltr_cnt.to_string(),
+            Punctuation => self.sbl_cnt.to_string(),
+            Digit       => self.num_cnt.to_string(),
         }
     }
 
@@ -481,34 +485,32 @@ impl RandKey {
     ///
     /// Basic usage:
     /// ```
-    /// use rand_key::*;
+    /// use rand_key::{RandKey, ASCIIExcludeCtrl::*};
     ///
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let mut r_p = RandKey::new("10", "2", "3")?;
     ///
     /// // Set the letter's count
-    /// r_p.set_cnt("L", "20");
-    /// assert_eq!(r_p.get_cnt("L"), Some("20".to_string()));
+    /// r_p.set_cnt(Alphabetic, "20");
+    /// assert_eq!(&r_p.get_cnt(Alphabetic), "20");
     ///
     /// // Set the symbol's count
-    /// r_p.set_cnt("S", "1000");
-    /// assert_eq!(r_p.get_cnt("S"), Some("1000".to_string()));
+    /// r_p.set_cnt(Punctuation, "1000");
+    /// assert_eq!(&r_p.get_cnt(Punctuation), "1000");
     ///
     /// // Set the number's count
-    /// r_p.set_cnt("N", "0");
-    /// assert_eq!(r_p.get_cnt("N"), Some("0".to_string()));
+    /// r_p.set_cnt(Digit, "0");
+    /// assert_eq!(&r_p.get_cnt(Digit), "0");
     /// # Ok(())
     /// # }
     /// ```
     #[inline]
     #[rustfmt::skip]
-    pub fn set_cnt(&mut self, kind: &str, val: impl AsRef<str>) -> Result<(), GenError> {
+    pub fn set_cnt(&mut self, kind: ASCIIExcludeCtrl, val: impl AsRef<str>) {
         match kind {
-            "L" => { self.ltr_cnt = val.as_biguint()?; Ok(()) }
-            "S" => { self.sbl_cnt = val.as_biguint()?; Ok(()) }
-            "N" => { self.num_cnt = val.as_biguint()?; Ok(()) }
-
-            _ => Err(GenError::InvalidKind),
+            Alphabetic  => self.ltr_cnt = val.as_biguint().unwrap(),
+            Punctuation => self.sbl_cnt = val.as_biguint().unwrap(),
+            Digit       => self.num_cnt = val.as_biguint().unwrap(),
         }
     }
 

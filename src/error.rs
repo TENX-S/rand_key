@@ -18,13 +18,10 @@ pub enum GenError {
     #[error("Require ASCII characters excluded control ones")]
     InvalidChar,
 
-    #[error("Require a existed kind: `L`, `S` or `N`")]
-    InvalidKind,
-
     #[error("Require Non-negative integer in `&str`")]
     InvalidNumber,
 
-    #[error("Require a defined operation: `update` or `check`")]
-    InvalidOperation(String),
+    #[error("Require consistent field")]
+    InconsistentField,
 
 }

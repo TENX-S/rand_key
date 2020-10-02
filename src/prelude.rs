@@ -1,12 +1,11 @@
-use crate::{
-    error::GenError,
-    RandKey, ToRandKey,
-    utils::{_DATA, BigUint},
-};
-
 use std::{
     ops::{Add, AddAssign},
     fmt::{self, Display, Formatter},
+};
+use crate::{
+    error::GenError,
+    utils::{_DATA, BigUint},
+    RandKey, ToRandKey, SetRandKeyOp::Update,
 };
 
 
@@ -41,16 +40,16 @@ impl Add for RandKey {
     ///
     /// Basic Usage:
     /// ```
-    /// use rand_key::RandKey;
+    /// use rand_key::{RandKey, ASCIIExcludeCtrl::*};
     ///
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let mut r0 = RandKey::new("1", "2", "3")?;
     /// let mut r1 = RandKey::new("4", "5", "6")?;
     /// let mut r2 = r0 + r1;
     ///
-    /// assert_eq!(r2.get_cnt("L"), Some(5.to_string()));
-    /// assert_eq!(r2.get_cnt("S"), Some(7.to_string()));
-    /// assert_eq!(r2.get_cnt("N"), Some(9.to_string()));
+    /// assert_eq!(&r2.get_cnt(Alphabetic),  "5");
+    /// assert_eq!(&r2.get_cnt(Punctuation), "7");
+    /// assert_eq!(&r2.get_cnt(Digit),       "9");
     /// # Ok(())
     /// # }
     /// ```
@@ -78,7 +77,7 @@ impl AddAssign for RandKey {
     ///
     /// Basic Usage:
     /// ```
-    /// use rand_key::RandKey;
+    /// use rand_key::{RandKey, ASCIIExcludeCtrl::*};
     ///
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let mut r0 = RandKey::new("1", "2", "3")?;
@@ -86,9 +85,9 @@ impl AddAssign for RandKey {
     ///
     /// r0 += r1;
     ///
-    /// assert_eq!(r0.get_cnt("L"), Some(5.to_string()));
-    /// assert_eq!(r0.get_cnt("S"), Some(7.to_string()));
-    /// assert_eq!(r0.get_cnt("N"), Some(9.to_string()));
+    /// assert_eq!(&r0.get_cnt(Alphabetic),  "5");
+    /// assert_eq!(&r0.get_cnt(Punctuation), "7");
+    /// assert_eq!(&r0.get_cnt(Digit),       "9");
     /// # Ok(())
     /// # }
     /// ```
@@ -115,18 +114,13 @@ impl AsRef<str> for RandKey {
 
 impl<T: AsRef<str>> ToRandKey for T {
     #[inline]
-    fn to_randkey(&self) -> RandKey { self.as_ref().into() }
-}
-
-
-impl From<&str> for RandKey {
-    #[inline]
-    fn from(s: &str) -> Self {
-        let mut r_p = RandKey::default();
-        r_p.set_key(s, "update").unwrap();
-
-        r_p
-
+    fn to_randkey(&self) -> Option<RandKey> {
+        let mut r_p: RandKey = Default::default();
+        if r_p.set_key(self.as_ref(), Update).is_ok() {
+            Some(r_p)
+        } else {
+            None
+        }
     }
 }
 

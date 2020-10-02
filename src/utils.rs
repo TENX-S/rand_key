@@ -4,9 +4,8 @@ pub use num_bigint::{BigUint, ToBigUint};
 pub use num_traits::{Zero, One, ToPrimitive};
 
 
-use std::{str::FromStr, sync::{Arc, atomic::{AtomicUsize, Ordering}},};
-use parking_lot::Mutex;
 use crate::error::GenError;
+use std::{str::FromStr, sync::{Arc, atomic::{AtomicUsize, Ordering::*}},};
 
 
 
@@ -53,18 +52,17 @@ pub(crate) fn _CNT(content: impl AsRef<str>) -> Result<(BigUint, BigUint, BigUin
            .par_iter()
            .for_each(|x| {
                if x.is_ascii() {
-                   let mut temp;
 
-                   if x.is_ascii_alphabetic()  { temp = l.clone(); temp.fetch_add(1, Ordering::SeqCst); }
-                   if x.is_ascii_punctuation() { temp = s.clone(); temp.fetch_add(1, Ordering::SeqCst); }
-                   if x.is_ascii_digit()       { temp = n.clone(); temp.fetch_add(1, Ordering::SeqCst); }
+                   if x.is_ascii_alphabetic()  {  l.clone().fetch_add(1, SeqCst); }
+                   if x.is_ascii_punctuation() {  s.clone().fetch_add(1, SeqCst); }
+                   if x.is_ascii_digit()       {  n.clone().fetch_add(1, SeqCst); }
 
                }
            });
 
-    let l = l.load(Ordering::SeqCst).to_biguint().unwrap();
-    let s = s.load(Ordering::SeqCst).to_biguint().unwrap();
-    let n = n.load(Ordering::SeqCst).to_biguint().unwrap();
+    let l = l.load(SeqCst).to_biguint().unwrap();
+    let s = s.load(SeqCst).to_biguint().unwrap();
+    let n = n.load(SeqCst).to_biguint().unwrap();
 
     if &l+&s+&n != content.as_ref().len().to_biguint().unwrap() {
         Err(GenError::InvalidChar)
@@ -84,7 +82,6 @@ pub(crate) fn _RAND_IDX(cnt: &BigUint, length: usize) -> Vec<usize> {
 
     while !n.is_zero() {
         idxs.push(thread_rng().gen_range(0, length));
-
         n -= BigUint::one();
     }
 
@@ -104,11 +101,9 @@ pub(crate) fn _DIV_UNIT(unit: &BigUint, n: &mut BigUint) -> Vec<BigUint> {
     loop {
         if n.clone() < UNIT {
             ret.push(n.to_biguint().unwrap());
-
             break;
         } else {
             *n -= UNIT.clone();
-
             ret.push(UNIT.clone());
         }
     }
@@ -116,13 +111,14 @@ pub(crate) fn _DIV_UNIT(unit: &BigUint, n: &mut BigUint) -> Vec<BigUint> {
     ret
 }
 
+
 /// Check whether the elements in the sequence are all ascii values
 #[inline]
 pub(crate) fn check_ascii<T: IntoIterator>(v: T) -> bool
     where <T as IntoIterator>::Item: AsRef<str>
 {
     v.into_iter().skip_while(|c| {
-        let c = char::from_str(c.as_ref()).unwrap();
+        let c = char_from_str(c);
         c.is_ascii() && !c.is_ascii_control()
     }).next().is_none()
 }
@@ -132,6 +128,8 @@ pub(crate) fn check_ascii<T: IntoIterator>(v: T) -> bool
 pub(crate) fn group<T: IntoIterator>(v: T) -> Vec<Vec<String>>
     where <T as IntoIterator>::Item: AsRef<str>
 {
+    use parking_lot::Mutex;
+
     let v:Vec<String> = v.into_iter().map(|x| x.as_ref().to_string()).collect();
 
     let ltr = Mutex::new(Vec::<String>::new());
@@ -140,7 +138,7 @@ pub(crate) fn group<T: IntoIterator>(v: T) -> Vec<Vec<String>>
 
     v.par_iter().for_each(|c| {
         let mut temp;
-        let c = char::from_str(c).unwrap();
+        let c = char_from_str(c);
 
         if c.is_ascii_alphabetic()  { temp = ltr.lock(); temp.push(c.clone().into()); }
         if c.is_ascii_punctuation() { temp = sbl.lock(); temp.push(c.clone().into()); }
