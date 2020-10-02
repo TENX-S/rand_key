@@ -1,4 +1,4 @@
-name: TestRandKey 
+name: CI
 
 on:
   push:
@@ -10,13 +10,12 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-            
-  build:
+  build_and_test:
+    name: Rust project
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v2
-    - name: Build
-      run: cargo build
-    - name: Run tests
-      run: cargo test
+      - uses: actions/checkout@master
+      - uses: actions-rs/cargo@v1
+        with:
+          command: build
+          arguments: --release --all-features
