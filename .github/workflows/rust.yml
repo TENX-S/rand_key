@@ -19,3 +19,7 @@ jobs:
         with:
           command: build
           arguments: --release --all-features
+      - uses: actions-rs/cargo@v1
+        with:
+          command: test
+          arguments: --release
