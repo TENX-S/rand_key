@@ -1,4 +1,4 @@
-name: TestRandKey 
+name: CI
 
 on:
   push:
@@ -12,7 +12,7 @@ env:
 jobs:
   build_and_test:
     name: Ubuntu Test
-    runs-on: windows-latest
+    runs-on: windows-latest, ubuntu-latest
     steps:
       - uses: actions/checkout@master
       - uses: actions-rs/cargo@v1
