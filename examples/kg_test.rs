@@ -10,7 +10,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let mut r_p;
 
-
     if demands.is_empty() {
 
         r_p = RandKey::new("10", "2", "3")?;

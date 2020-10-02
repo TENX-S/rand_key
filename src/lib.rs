@@ -35,8 +35,8 @@
 //! It will take up huge even all RAM and may harm your computer.
 
 
+#![allow(non_snake_case)]
 #![deny(unused, dead_code, rust_2018_idioms,)]
-#![allow(non_snake_case, broken_intra_doc_links,)]
 
 
 mod prelude;
