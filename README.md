@@ -42,12 +42,12 @@ $ cargo run --release --example kg_test 100000000 0 0 100000
 
 In `Cargo.toml`:
 ```toml
-rand_pwd = "1"
+rand_pwd = "1" # Deprecated
 ```
 
-You may want to use the latest version(not stable and may requires nightly Rust):
+The latest version:
 ```toml
-rand_pwd = { git = "https://github.com/TENX-S/rand_key", branch = "master" }
+rand_key = { git = "https://github.com/TENX-S/rand_key", branch = "master" }
 ```
 
 Here's a simple demo:
