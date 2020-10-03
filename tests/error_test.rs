@@ -3,7 +3,7 @@
 
 
 #[cfg(test)]
-mod InvaidInput {
+mod InvalidInput {
 
     use rand_key::RandKey;
 
