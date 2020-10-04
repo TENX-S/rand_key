@@ -1,7 +1,9 @@
 /target
 pkg/
-**/*.rs.bk
 Cargo.lock
 /.cargo
 /.idea
 *.html
+**/*.rs.bk
+*.sublime-project
+*.sublime-workspace

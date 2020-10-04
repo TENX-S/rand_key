@@ -107,10 +107,8 @@ impl AsRef<str> for RandKey {
 
 
 impl<T: AsRef<str>> ToRandKey for T {
-    type Output = Option<RandKey>;
-
     #[inline]
-    fn to_randkey(&self) -> Self::Output {
+    fn to_randkey(&self) -> Option<RandKey> {
         let mut r_p: RandKey = Default::default();
         if r_p.set_key(self.as_ref(), Update).is_ok() {
             Some(r_p)

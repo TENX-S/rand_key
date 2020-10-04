@@ -64,8 +64,7 @@ pub struct RandKey {
 /// A generic trait for converting a value to a `RandKey`.
 pub trait ToRandKey {
     /// Converts the value of `self` to a `RandKey`.
-    type Output;
-    fn to_randkey(&self) -> Self::Output;
+    fn to_randkey(&self) -> Option<RandKey>;
 }
 
 
