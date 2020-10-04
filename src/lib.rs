@@ -34,14 +34,13 @@
 //! Threads did nothing useful! And capcity of the `Vec` is 1M at least!
 //! It will take up huge even all RAM and may harm your computer.
 
-
 #![allow(non_snake_case)]
-#![deny(unused, dead_code, rust_2018_idioms,)]
+#![deny(unused, dead_code, rust_2018_idioms)]
 
 
+mod error;
 mod prelude;
 mod utils;
-mod error;
 
 
 use utils::*;
@@ -90,39 +89,37 @@ impl RandKey {
     /// Basic usage:
     /// ```
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
-    ///     use rand_key::RandKey;
-    ///     let mut r_p = RandKey::new("11", "4", "2")?;
+    /// use rand_key::RandKey;
+    /// let mut r_p = RandKey::new("11", "4", "2")?;
     /// #   Ok(())
     /// # }
     /// ```
     #[inline]
     pub fn new<L, S, N>(ltr_cnt: L, sbl_cnt: S, num_cnt: N) -> Result<Self, GenError>
-        where L: AsRef<str>, S: AsRef<str>, N: AsRef<str>,
+        where L: AsRef<str>,
+              S: AsRef<str>,
+              N: AsRef<str>,
     {
-
         if Self::check_init((&ltr_cnt, &sbl_cnt, &num_cnt)) {
-            Ok(RandKey {
-                ltr_cnt: ltr_cnt.as_biguint()?,
-                sbl_cnt: sbl_cnt.as_biguint()?,
-                num_cnt: num_cnt.as_biguint()?,
-                key:     String::new(),
-                UNIT:    BigUint::from(u16::MAX),
-                DATA:    _DATA(),
-            })
+            Ok(RandKey { ltr_cnt: ltr_cnt.as_biguint()?,
+                         sbl_cnt: sbl_cnt.as_biguint()?,
+                         num_cnt: num_cnt.as_biguint()?,
+                         key:     String::new(),
+                         UNIT:    BigUint::from(u16::MAX),
+                         DATA:    _DATA(), })
         } else {
             Err(GenError::InvalidNumber)
         }
-
     }
-
 
     #[inline]
     pub(crate) fn check_init<L, S, N>(input: (L, S, N)) -> bool
-        where L: AsRef<str>, S: AsRef<str>, N: AsRef<str>,
+        where L: AsRef<str>,
+              S: AsRef<str>,
+              N: AsRef<str>,
     {
         input.0.as_biguint().is_ok() && input.1.as_biguint().is_ok() && input.2.as_biguint().is_ok()
     }
-
 
     /// Return the key of random password in `&str`
     /// # Example
@@ -138,7 +135,6 @@ impl RandKey {
     /// ```
     #[inline]
     pub fn key(&self) -> &str { &self.key }
-
 
     /// Set the key of `RandKey`, depend on the name of operation.
     ///
@@ -200,7 +196,6 @@ impl RandKey {
 
     }
 
-
     /// Return the value of `UNIT`
     /// # Example
     ///
@@ -218,11 +213,9 @@ impl RandKey {
     #[inline]
     pub fn unit(&self) -> String { self.UNIT.to_string() }
 
-
     /// [set a right `UNIT` number](https://docs.rs/rand_pwd/1.1.3/rand_pwd/#the-unit-field).
     #[inline]
     pub fn set_unit(&mut self, val: impl AsRef<str>) -> Result<(), GenError> {
-
         let val = val.as_biguint()?;
 
         if val == BigUint::zero() {
@@ -231,47 +224,40 @@ impl RandKey {
             self.UNIT = val;
             Ok(())
         }
-
     }
-
 
     /// Return the shared reference of `DATA`
     #[inline]
     pub fn all_data(&self) -> &Vec<Vec<String>> { &self.DATA }
 
-
     /// Return data depend on given kind
     #[inline]
     pub fn data(&self, kind: ASCIIExcludeCtrl) -> &[String] {
         match kind {
-            Alphabetic  => &self.DATA[0],
+            Alphabetic => &self.DATA[0],
             Punctuation => &self.DATA[1],
-            Digit       => &self.DATA[2],
+            Digit => &self.DATA[2],
         }
     }
-
 
     /// Clear all the data of `RandPwd`
     #[inline]
     pub fn clear_all(&mut self) { self.DATA.iter_mut().for_each(|x| x.clear()); }
 
-
     /// Clear the letters, symbols or numbers
     #[inline]
     pub fn clear(&mut self, kind: ASCIIExcludeCtrl) {
         match kind {
-            Alphabetic  => self.DATA[0].clear(),
+            Alphabetic => self.DATA[0].clear(),
             Punctuation => self.DATA[1].clear(),
-            Digit       => self.DATA[2].clear(),
+            Digit => self.DATA[2].clear(),
         }
     }
-
 
     /// Check the data
     #[inline]
     #[allow(non_snake_case)]
     pub(crate) fn check_data(&self) -> Result<(), GenError> {
-
         let L = self.ltr_cnt.is_zero();
         let S = self.sbl_cnt.is_zero();
         let N = self.num_cnt.is_zero();
@@ -289,9 +275,7 @@ impl RandKey {
         } else {
             Err(GenError::MissChar)
         }
-
     }
-
 
     /// Delete the data
     /// # Example
@@ -301,7 +285,7 @@ impl RandKey {
     /// use rand_key::{RandKey, ASCIIExcludeCtrl::*};
     ///
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// let mut r_p = RandKey::new("10" ,"2" ,"3")?;
+    /// let mut r_p = RandKey::new("10", "2", "3")?;
     /// r_p.replace_data(&["1", "2", "a", "-"]);
     /// r_p.del_item(&["1"]);
     /// assert_eq!(r_p.data(Digit), vec!["2"]);
@@ -310,21 +294,16 @@ impl RandKey {
     /// ```
     #[inline]
     pub fn del_item<T: IntoIterator+Clone>(&mut self, items: T) -> Result<(), GenError>
-        where <T as IntoIterator>::Item: AsRef<str>
+        where <T as IntoIterator>::Item: AsRef<str>,
     {
-
         let mut all = self.DATA.concat();
 
         if check_ascii(items.clone().into_iter()) {
-
-            let mut v = items
-                .into_iter()
-                .map(|c| char_from_str(c))
-                .collect::<Vec<_>>();
+            let mut v = items.into_iter().map(char_from_str).collect::<Vec<_>>();
 
             v.dedup_by_key(|x| char::clone(x) as u8);
 
-            if  v.iter().skip_while(|x| all.contains(&x.to_string())).next().is_none() {
+            if v.iter().find(|x| !all.contains(&x.to_string())).is_none() {
                 all.retain(|x| !v.contains(&char_from_str(x)));
                 self.DATA = group(all);
 
@@ -335,9 +314,7 @@ impl RandKey {
         } else {
             Err(GenError::InvalidChar)
         }
-
     }
-
 
     /// Add data to the data set that `RandKey` carries
     /// # Example
@@ -358,11 +335,10 @@ impl RandKey {
     /// ```
     #[inline]
     pub fn add_item<T: IntoIterator+Clone>(&mut self, val: T) -> Result<(), GenError>
-        where <T as IntoIterator>::Item: AsRef<str>
+        where <T as IntoIterator>::Item: AsRef<str>,
     {
-
         if check_ascii(val.clone().into_iter()) {
-            let val = group(val.clone().into_iter());
+            let val = group(val.into_iter());
 
             for i in 0..self.DATA.len() {
                 self.DATA[i].extend_from_slice(&val[i]);
@@ -372,9 +348,7 @@ impl RandKey {
         } else {
             Err(GenError::InvalidChar)
         }
-
     }
-
 
     /// Return a new `RandKey` which has the replaced data
     /// # Example
@@ -429,7 +403,6 @@ impl RandKey {
         }
     }
 
-
     /// Returns the length of this `RandKey`, in both bytes and [char]s.
     /// # Example
     ///
@@ -448,11 +421,9 @@ impl RandKey {
     #[inline]
     pub fn len(&self) -> String { self.key.len().to_string() }
 
-
     /// Returns true if this `RandKey` has a length of zero, and false otherwise.
     #[inline]
     pub fn is_empty(&self) -> bool { self.key.is_empty() }
-
 
     /// Get count of `RandKey`
     /// # Example
@@ -465,19 +436,18 @@ impl RandKey {
     ///
     /// assert_eq!(&r_p.get_cnt(Alphabetic), "10");
     /// assert_eq!(&r_p.get_cnt(Punctuation), "2");
-    /// assert_eq!(&r_p.get_cnt(Digit),       "3");
+    /// assert_eq!(&r_p.get_cnt(Digit), "3");
     /// # Ok(())
     /// # }
     /// ```
     #[inline]
     pub fn get_cnt(&self, kind: ASCIIExcludeCtrl) -> String {
         match kind {
-            Alphabetic  => self.ltr_cnt.to_string(),
+            Alphabetic => self.ltr_cnt.to_string(),
             Punctuation => self.sbl_cnt.to_string(),
-            Digit       => self.num_cnt.to_string(),
+            Digit => self.num_cnt.to_string(),
         }
     }
-
 
     /// Change the count of letters, symbols or numbers of `RandKey`
     /// # Example
@@ -512,7 +482,6 @@ impl RandKey {
             Digit       => self.num_cnt = val.as_biguint().unwrap(),
         }
     }
-
 
     /// Generate the password for `RandKey`
     /// # Example
@@ -570,5 +539,4 @@ impl RandKey {
             Self::check_data(&inner_r_p)
         }
     }
-
 }

@@ -5,13 +5,11 @@ use std::{env::args, error::Error};
 
 
 fn main() -> Result<(), Box<dyn Error>> {
-
-    let demands:Vec<String> = args().skip(1).collect();
+    let demands: Vec<String> = args().skip(1).collect();
 
     let mut r_p;
 
     if demands.is_empty() {
-
         r_p = RandKey::new("10", "2", "3")?;
         r_p.join()?;
         print!("{}", r_p);
@@ -33,5 +31,4 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
 
     Ok(())
-
 }

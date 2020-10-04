@@ -5,7 +5,13 @@ pub use num_traits::{Zero, One, ToPrimitive};
 
 
 use crate::error::GenError;
-use std::{str::FromStr, sync::{Arc, atomic::{AtomicUsize, Ordering::*}},};
+use std::{
+    str::FromStr,
+    sync::{
+        Arc,
+        atomic::{AtomicUsize, Ordering::*},
+    },
+};
 
 
 
@@ -76,7 +82,6 @@ pub(crate) fn _CNT(content: impl AsRef<str>) -> Result<(BigUint, BigUint, BigUin
 /// Generate n random numbers, each one is up to `length`
 #[inline]
 pub(crate) fn _RAND_IDX(cnt: &BigUint, length: usize) -> Vec<usize> {
-
     let mut n = cnt.to_biguint().unwrap();
     let mut idxs = Vec::with_capacity(n.to_usize().unwrap());
 
@@ -86,14 +91,12 @@ pub(crate) fn _RAND_IDX(cnt: &BigUint, length: usize) -> Vec<usize> {
     }
 
     idxs
-
 }
 
 
 /// Resolve large numbers into smaller numbers
 #[inline]
 pub(crate) fn _DIV_UNIT(unit: &BigUint, n: &mut BigUint) -> Vec<BigUint> {
-
     let UNIT = unit.to_biguint().unwrap();
 
     let mut ret = Vec::with_capacity((n.clone() / &UNIT + BigUint::one()).to_usize().unwrap());
@@ -115,39 +118,48 @@ pub(crate) fn _DIV_UNIT(unit: &BigUint, n: &mut BigUint) -> Vec<BigUint> {
 /// Check whether the elements in the sequence are all ascii values
 #[inline]
 pub(crate) fn check_ascii<T: IntoIterator>(v: T) -> bool
-    where <T as IntoIterator>::Item: AsRef<str>
+    where <T as IntoIterator>::Item: AsRef<str>,
 {
-    v.into_iter().skip_while(|c| {
-        let c = char_from_str(c);
-        c.is_ascii() && !c.is_ascii_control()
-    }).next().is_none()
+    v.into_iter()
+     .find(|c| {
+         let c = char_from_str(c);
+         !c.is_ascii() || c.is_ascii_control()
+     })
+     .is_none()
 }
 
 
 #[inline]
 pub(crate) fn group<T: IntoIterator>(v: T) -> Vec<Vec<String>>
-    where <T as IntoIterator>::Item: AsRef<str>
+    where <T as IntoIterator>::Item: AsRef<str>,
 {
     use parking_lot::Mutex;
 
-    let v:Vec<String> = v.into_iter().map(|x| x.as_ref().to_string()).collect();
+    let v: Vec<String> = v.into_iter().map(|x| x.as_ref().to_string()).collect();
 
     let ltr = Mutex::new(Vec::<String>::new());
     let sbl = Mutex::new(Vec::<String>::new());
     let num = Mutex::new(Vec::<String>::new());
 
     v.par_iter().for_each(|c| {
-        let mut temp;
-        let c = char_from_str(c);
+                    let mut temp;
+                    let c = char_from_str(c);
 
-        if c.is_ascii_alphabetic()  { temp = ltr.lock(); temp.push(c.clone().into()); }
-        if c.is_ascii_punctuation() { temp = sbl.lock(); temp.push(c.clone().into()); }
-        if c.is_ascii_digit()       { temp = num.lock(); temp.push(c.clone().into()); }
-
-    });
+                    if c.is_ascii_alphabetic() {
+                        temp = ltr.lock();
+                        temp.push(c.clone().into());
+                    }
+                    if c.is_ascii_punctuation() {
+                        temp = sbl.lock();
+                        temp.push(c.clone().into());
+                    }
+                    if c.is_ascii_digit() {
+                        temp = num.lock();
+                        temp.push(c.clone().into());
+                    }
+                });
 
     vec![ltr.into_inner(), sbl.into_inner(), num.into_inner()]
-
 }
 
 
