@@ -4,12 +4,14 @@ use {
         fmt::{self, Display, Formatter},
     },
     crate::{
+        DEFAULT_UNIT,
         error::GenError,
         RandKey, ToRandKey,
         SetRandKeyOp::Update,
-        utils::{_DATA, BigUint},
+        utils::{_DEFAULT_DATA, BigUint},
     },
 };
+
 
 
 
@@ -18,12 +20,14 @@ impl Default for RandKey {
     /// The default value of `RandKey`
     #[inline]
     fn default() -> Self {
-        RandKey { ltr_cnt: Default::default(),
-                  sbl_cnt: Default::default(),
-                  num_cnt: Default::default(),
-                  key:     Default::default(),
-                  UNIT:    BigUint::from(u16::MAX),
-                  DATA:    _DATA(), }
+        RandKey {
+            ltr_cnt: Default::default(),
+            sbl_cnt: Default::default(),
+            num_cnt: Default::default(),
+            key:     Default::default(),
+            UNIT:    BigUint::from(DEFAULT_UNIT),
+            DATA:    _DEFAULT_DATA(),
+        }
     }
 }
 
@@ -59,12 +63,14 @@ impl Add for RandKey {
         let mut result_data = self.clone();
         result_data.add_item(rhs.DATA.concat()).unwrap();
 
-        RandKey { ltr_cnt: self.ltr_cnt + rhs.ltr_cnt,
-                  sbl_cnt: self.sbl_cnt + rhs.sbl_cnt,
-                  num_cnt: self.num_cnt + rhs.num_cnt,
-                  key:     self.key + &rhs.key,
-                  UNIT:    self.UNIT,
-                  DATA:    result_data.DATA, }
+        RandKey {
+            ltr_cnt: self.ltr_cnt + rhs.ltr_cnt,
+            sbl_cnt: self.sbl_cnt + rhs.sbl_cnt,
+            num_cnt: self.num_cnt + rhs.num_cnt,
+            key:     self.key + &rhs.key,
+            UNIT:    self.UNIT,
+            DATA:    result_data.DATA,
+        }
     }
 }
 
@@ -90,14 +96,12 @@ impl AddAssign for RandKey {
     /// ```
     #[inline]
     fn add_assign(&mut self, rhs: Self) {
-        let mut result_data = self.clone();
-        result_data.add_item(rhs.DATA.concat()).unwrap();
 
         self.key += &rhs.key;
         self.ltr_cnt += rhs.ltr_cnt;
         self.sbl_cnt += rhs.sbl_cnt;
         self.num_cnt += rhs.num_cnt;
-        self.DATA = result_data.DATA;
+        self.add_item(rhs.DATA.concat()).unwrap();
     }
 }
 

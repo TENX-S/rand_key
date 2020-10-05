@@ -1,3 +1,4 @@
+#![allow(broken_intra_doc_links)]
 //! # Usage:
 //! ```rust
 //!     use rand_key::{RandKey, ToRandKey};
@@ -34,6 +35,7 @@
 //! Threads did nothing useful! And capcity of the `Vec` is 1M at least!
 //! It will take up huge even all RAM and may harm your computer.
 
+
 #![allow(non_snake_case)]
 #![deny(unused, dead_code, rust_2018_idioms)]
 
@@ -49,6 +51,9 @@ use {
     self::ASCIIExcludeCtrl::*,
     crate::prelude::AsBiguint,
 };
+
+
+pub(crate) const DEFAULT_UNIT: usize = 2 << 19;
 
 
 /// struct `RandKey`
@@ -102,12 +107,14 @@ impl RandKey {
               N: AsRef<str>,
     {
         if Self::check_init((&ltr_cnt, &sbl_cnt, &num_cnt)) {
-            Ok(RandKey { ltr_cnt: ltr_cnt.as_biguint()?,
-                         sbl_cnt: sbl_cnt.as_biguint()?,
-                         num_cnt: num_cnt.as_biguint()?,
-                         key:     String::new(),
-                         UNIT:    BigUint::from(u16::MAX),
-                         DATA:    _DATA(), })
+            Ok(RandKey {
+                ltr_cnt: ltr_cnt.as_biguint()?,
+                sbl_cnt: sbl_cnt.as_biguint()?,
+                num_cnt: num_cnt.as_biguint()?,
+                key:     String::new(),
+                UNIT:    BigUint::from(DEFAULT_UNIT),
+                DATA:    _DEFAULT_DATA(),
+            })
         } else {
             Err(GenError::InvalidNumber)
         }
@@ -174,7 +181,7 @@ impl RandKey {
                 self.ltr_cnt = val_ltr_cnt;
                 self.sbl_cnt = val_sbl_cnt;
                 self.num_cnt = val_num_cnt;
-                self.key = val.into();
+                self.key     = val.into();
 
                 Ok(())
             }
@@ -206,13 +213,13 @@ impl RandKey {
     ///
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let r_p = RandKey::new("10", "2", "3")?;
-    /// // The default value of unit is 65535
-    /// assert_eq!(&r_p.unit(), "65535");
+    /// // The default value of unit is 1048576
+    /// assert_eq!(r_p.unit(), "1048576");
     /// # Ok(())
     /// # }
     /// ```
     #[inline]
-    pub fn unit(&self) -> String { self.UNIT.to_string() }
+    pub fn unit(&self) -> &str { "1048576" }
 
     /// [set a right `UNIT` number](https://docs.rs/rand_pwd/1.1.3/rand_pwd/#the-unit-field).
     #[inline]
@@ -299,14 +306,14 @@ impl RandKey {
     {
         let mut all = self.DATA.concat();
 
-        if check_ascii(items.clone().into_iter()) {
-            let mut v = items.into_iter().map(char_from_str).collect::<Vec<_>>();
+        if _CHECK_ASCII(items.clone().into_iter()) {
+            let mut v = items.into_iter().map(_CHAR_FROM_STR).collect::<Vec<_>>();
 
             v.dedup_by_key(|x| char::clone(x) as u8);
 
             if v.iter().find(|x| !all.contains(&x.to_string())).is_none() {
-                all.retain(|x| !v.contains(&char_from_str(x)));
-                self.DATA = group(all);
+                all.retain(|x| !v.contains(&_CHAR_FROM_STR(x)));
+                self.DATA = _GROUP(all);
 
                 Ok(())
             } else {
@@ -335,15 +342,18 @@ impl RandKey {
     /// # }
     /// ```
     #[inline]
+    #[allow(clippy::needless_range_loop)]
     pub fn add_item<T: IntoIterator+Clone>(&mut self, val: T) -> Result<(), GenError>
         where <T as IntoIterator>::Item: AsRef<str>,
     {
-        if check_ascii(val.clone().into_iter()) {
-            let val = group(val.into_iter());
+        if _CHECK_ASCII(val.clone().into_iter()) {
+            let val = _GROUP(val.into_iter());
 
             for i in 0..self.DATA.len() {
-                self.DATA[i].extend_from_slice(&val[i]);
-                self.DATA[i].dedup_by_key(|x| char_from_str(x) as u8);
+                unsafe {
+                    self.DATA.get_unchecked_mut(i).extend_from_slice(&val.get_unchecked(i));
+                    self.DATA.get_unchecked_mut(i).dedup_by_key(|x| _CHAR_FROM_STR(x) as u8);
+                }
             }
             Ok(())
         } else {
@@ -377,7 +387,7 @@ impl RandKey {
         where <T as IntoIterator>::Item: AsRef<str>
     {
 
-        if check_ascii(val.clone().into_iter()) {
+        if _CHECK_ASCII(val.clone().into_iter()) {
 
             self.DATA = {
 
@@ -386,7 +396,7 @@ impl RandKey {
                 let mut num = vec![];
 
                 val.into_iter().for_each(|x| {
-                    let x = char_from_str(x);
+                    let x = _CHAR_FROM_STR(x);
 
                     if x.is_ascii_alphabetic()  { ltr.push(x.into()); }
                     if x.is_ascii_punctuation() { sbl.push(x.into()); }
@@ -444,9 +454,9 @@ impl RandKey {
     #[inline]
     pub fn get_cnt(&self, kind: ASCIIExcludeCtrl) -> String {
         match kind {
-            Alphabetic => self.ltr_cnt.to_string(),
+            Alphabetic  => self.ltr_cnt.to_string(),
             Punctuation => self.sbl_cnt.to_string(),
-            Digit => self.num_cnt.to_string(),
+            Digit       => self.num_cnt.to_string(),
         }
     }
 

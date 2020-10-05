@@ -5,6 +5,7 @@ use std::{env::args, error::Error};
 
 
 fn main() -> Result<(), Box<dyn Error>> {
+
     let demands: Vec<String> = args().skip(1).collect();
 
     let mut r_p;

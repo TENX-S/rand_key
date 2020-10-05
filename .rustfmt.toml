@@ -9,8 +9,6 @@ enum_discrim_align_threshold = 1024
 
 struct_field_align_threshold = 1024
 
-merge_imports = true
-
 fn_single_line = true
 
 reorder_imports = false
@@ -23,11 +21,7 @@ combine_control_expr = false
 
 use_field_init_shorthand = true
 
-condense_wildcard_suffixes = true
-
 format_code_in_doc_comments = true
-
-indent_style = "Visual"
 
 trailing_comma = "always"
 

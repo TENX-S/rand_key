@@ -28,7 +28,7 @@ use {
 /// return letters, symbols, numbers in `Vec<Vec<String>>`
 #[inline]
 #[rustfmt::skip]
-pub(crate) fn _DATA() -> Vec<Vec<String>> {
+pub(crate) fn _DEFAULT_DATA() -> Vec<Vec<String>> {
 
     let mut letters = Vec::new();
     let mut symbols = Vec::new();
@@ -124,12 +124,12 @@ pub(crate) fn _DIV_UNIT(unit: &BigUint, n: &mut BigUint) -> Vec<BigUint> {
 
 /// Check whether the elements in the sequence are all ascii values
 #[inline]
-pub(crate) fn check_ascii<T: IntoIterator>(v: T) -> bool
+pub(crate) fn _CHECK_ASCII<T: IntoIterator>(v: T) -> bool
     where <T as IntoIterator>::Item: AsRef<str>,
 {
     v.into_iter()
      .find(|c| {
-         let c = char_from_str(c);
+         let c = _CHAR_FROM_STR(c);
          !c.is_ascii() || c.is_ascii_control()
      })
      .is_none()
@@ -137,7 +137,7 @@ pub(crate) fn check_ascii<T: IntoIterator>(v: T) -> bool
 
 
 #[inline]
-pub(crate) fn group<T: IntoIterator>(v: T) -> Vec<Vec<String>>
+pub(crate) fn _GROUP<T: IntoIterator>(v: T) -> Vec<Vec<String>>
     where <T as IntoIterator>::Item: AsRef<str>,
 {
     use parking_lot::Mutex;
@@ -150,7 +150,7 @@ pub(crate) fn group<T: IntoIterator>(v: T) -> Vec<Vec<String>>
 
     v.par_iter().for_each(|c| {
                     let mut temp;
-                    let c = char_from_str(c);
+                    let c = _CHAR_FROM_STR(c);
 
                     if c.is_ascii_alphabetic() {
                         temp = ltr.lock();
@@ -171,4 +171,4 @@ pub(crate) fn group<T: IntoIterator>(v: T) -> Vec<Vec<String>>
 
 
 #[inline]
-pub(crate) fn char_from_str(s: impl AsRef<str>) -> char { char::from_str(s.as_ref()).unwrap() }
+pub(crate) fn _CHAR_FROM_STR(s: impl AsRef<str>) -> char { char::from_str(s.as_ref()).unwrap() }
