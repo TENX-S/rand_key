@@ -3,17 +3,17 @@
 //!     use rand_key::{RandKey, ToRandKey};
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //!     let mut r_p = RandKey::new("10", "2", "3")?; // For now, it's empty. Use method `join` to generate the password
-//!     r_p.join()?;                           // Now `r_p` has some content, be kept in its `key` field
-//!     println!("{}", r_p);                  // Print it on the screen
+//!     r_p.join()?;                                 // Now `r_p` has some content, be kept in its `key` field
+//!     println!("{}", r_p);                         // Print it on the screen
 //!     // One possible output: 7$pA7yMCw=2DPGN
 //!     // Or you can build from an existing `&str`
-//!     let mut r_p = "=tE)n5f`sidR>BV".to_randkey().unwrap(); // 10 letters, 4 symbols, 1 number
+//!     let mut r_p = "=tE)n5f`sidR>BV".to_randkey()?; // 10 letters, 4 symbols, 1 number
 //!     // You can rebuild a random password and with equivalent amount of letters, symbols and numbers. Like below
 //!     r_p.join()?;
 //!     println!("{}", r_p);
 //!     // One possible output: qS`Xlyhpmg~"V8[
-//!     // Panic! Has non-ASCII character(s)!
-//!     // let mut r_p = "🦀️🦀️🦀️".to_RandKey();
+//!     // But you have to make sure that they were composed of ASCII characters or it will return `Err`.
+//!     assert!("🦀️🦀️🦀️".to_randkey().is_err());
 //! #   Ok(())
 //! # }
 //! ```
@@ -66,7 +66,7 @@ pub struct RandKey {
 /// A generic trait for converting a value to a `RandKey`.
 pub trait ToRandKey {
     /// Converts the value of `self` to a `RandKey`.
-    fn to_randkey(&self) -> Option<RandKey>;
+    fn to_randkey(&self) -> Result<RandKey, GenError>;
 }
 
 

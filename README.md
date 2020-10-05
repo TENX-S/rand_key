@@ -62,13 +62,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // One possible output: 7$pA7yMCw=2DPGN
 
     // You can also use the method `to_randkey` to convert a `String` or `&str` to `RandPwd`
-    let mut r_p = "n4jpstv$dI,.z'K".to_randkey().unwrap();
+    let mut r_p = "n4jpstv$dI,.z'K".to_randkey()?;
     // You can re-generate a random key and with equivalent amount of letters, symbols and numbers. Like below:
     r_p.join()?;
     println!("{}", r_p);
     // One possible output: qS`Xlyhpmg~"V8[
-    // But you have to make sure that they are all composed of ASCII characters or it will return `None`.
-    assert!("🦀️🦀️🦀️".to_randkey().is_none());
+    // But you have to make sure that they were composed of ASCII characters or it will return `Err`.
+    assert!("🦀️🦀️🦀️".to_randkey().is_err());
     Ok(())
 }
 ```

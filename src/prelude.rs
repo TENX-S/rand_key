@@ -110,12 +110,12 @@ impl AsRef<str> for RandKey {
 
 impl<T: AsRef<str>> ToRandKey for T {
     #[inline]
-    fn to_randkey(&self) -> Option<RandKey> {
+    fn to_randkey(&self) -> Result<RandKey, GenError> {
         let mut r_p: RandKey = Default::default();
         if r_p.set_key(self.as_ref(), Update).is_ok() {
-            Some(r_p)
+            Ok(r_p)
         } else {
-            None
+            Err(GenError::InvalidChar)
         }
     }
 }
@@ -128,6 +128,7 @@ pub trait AsBiguint {
 
 
 impl<T: AsRef<str>> AsBiguint for T {
+
     type Output = Result<BigUint, GenError>;
 
     #[inline]
@@ -139,4 +140,5 @@ impl<T: AsRef<str>> AsBiguint for T {
             Err(GenError::InvalidNumber)
         }
     }
+
 }
