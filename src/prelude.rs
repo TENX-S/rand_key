@@ -1,12 +1,14 @@
-use std::{
-    ops::{Add, AddAssign},
-    fmt::{self, Display, Formatter},
-};
-use crate::{
-    error::GenError,
-    utils::{_DATA, BigUint},
-    RandKey, ToRandKey,
-    SetRandKeyOp::Update,
+use {
+    std::{
+        ops::{Add, AddAssign},
+        fmt::{self, Display, Formatter},
+    },
+    crate::{
+        error::GenError,
+        RandKey, ToRandKey,
+        SetRandKeyOp::Update,
+        utils::{_DATA, BigUint},
+    },
 };
 
 

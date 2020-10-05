@@ -1,6 +1,6 @@
 //! # Usage:
 //! ```rust
-//!     use rand_key::{ RandKey, ToRandKey };
+//!     use rand_key::{RandKey, ToRandKey};
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //!     let mut r_p = RandKey::new("10", "2", "3")?; // For now, it's empty. Use method `join` to generate the password
 //!     r_p.join()?;                           // Now `r_p` has some content, be kept in its `key` field
@@ -43,10 +43,12 @@ mod prelude;
 mod utils;
 
 
-use utils::*;
-use error::GenError;
-use self::ASCIIExcludeCtrl::*;
-use crate::prelude::AsBiguint;
+use {
+    utils::*,
+    error::GenError,
+    self::ASCIIExcludeCtrl::*,
+    crate::prelude::AsBiguint,
+};
 
 
 /// struct `RandKey`
@@ -146,12 +148,12 @@ impl RandKey {
     /// ```
     /// use rand_key::{RandKey, SetRandKeyOp::*};
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// // update
+    /// // Update
     /// let mut r_p = RandKey::new("10", "2", "3")?;
     ///
     /// assert!(r_p.set_key("123456", Update).is_ok());
     ///
-    /// // check
+    /// // Check
     /// let mut r_p = RandKey::new("10", "2", "3")?;
     ///
     /// assert!(r_p.set_key("]EH1zyqx3Bl/F8a", Check).is_ok());

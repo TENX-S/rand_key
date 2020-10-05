@@ -12,7 +12,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     if demands.is_empty() {
         r_p = RandKey::new("10", "2", "3")?;
         r_p.join()?;
-        print!("{}", r_p);
+        println!("{}", r_p);
     } else {
         let ltr_cnt = &demands[0];
         let sbl_cnt = &demands[1];
@@ -27,7 +27,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         r_p.join()?;
 
-        print!("{}", r_p);
+        println!("{}", r_p);
     }
 
     Ok(())

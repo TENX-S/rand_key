@@ -1,16 +1,23 @@
-pub use rand::prelude::*;
-pub use rayon::prelude::*;
-pub use num_bigint::{BigUint, ToBigUint};
-pub use num_traits::{Zero, One, ToPrimitive};
+pub use {
+    rand::prelude::*,
+    rayon::prelude::*,
+    num_bigint::{BigUint, ToBigUint},
+    num_traits::{Zero, One, ToPrimitive},
+};
 
 
-use crate::error::GenError;
-use std::{
-    str::FromStr,
-    sync::{
-        Arc,
-        atomic::{AtomicUsize, Ordering::*},
+use {
+    std::{
+        str::FromStr,
+        sync::{
+            Arc,
+            atomic::{
+                Ordering::*,
+                AtomicUsize,
+            },
+        },
     },
+    crate::error::GenError,
 };
 
 
