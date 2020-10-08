@@ -35,7 +35,6 @@
 //! Threads did nothing useful! And capcity of the `Vec` is 1M at least!
 //! It will take up huge even all RAM and may harm your computer.
 
-
 #![allow(non_snake_case)]
 #![deny(unused, dead_code, rust_2018_idioms)]
 
@@ -45,12 +44,7 @@ mod prelude;
 mod utils;
 
 
-use {
-    utils::*,
-    error::GenError,
-    self::ASCIIExcludeCtrl::*,
-    crate::prelude::AsBiguint,
-};
+use {utils::*, error::GenError, self::ASCIIExcludeCtrl::*, crate::prelude::AsBiguint};
 
 
 pub(crate) const DEFAULT_UNIT: usize = 2 << 19;
@@ -102,9 +96,10 @@ impl RandKey {
     /// ```
     #[inline]
     pub fn new<L, S, N>(ltr_cnt: L, sbl_cnt: S, num_cnt: N) -> Result<Self, GenError>
-        where L: AsRef<str>,
-              S: AsRef<str>,
-              N: AsRef<str>,
+    where
+        L: AsRef<str>,
+        S: AsRef<str>,
+        N: AsRef<str>,
     {
         if Self::check_init((&ltr_cnt, &sbl_cnt, &num_cnt)) {
             Ok(RandKey {
@@ -122,9 +117,10 @@ impl RandKey {
 
     #[inline]
     pub(crate) fn check_init<L, S, N>(input: (L, S, N)) -> bool
-        where L: AsRef<str>,
-              S: AsRef<str>,
-              N: AsRef<str>,
+    where
+        L: AsRef<str>,
+        S: AsRef<str>,
+        N: AsRef<str>,
     {
         input.0.as_biguint().is_ok() && input.1.as_biguint().is_ok() && input.2.as_biguint().is_ok()
     }
@@ -302,7 +298,8 @@ impl RandKey {
     /// ```
     #[inline]
     pub fn del_item<T: IntoIterator+Clone>(&mut self, items: T) -> Result<(), GenError>
-        where <T as IntoIterator>::Item: AsRef<str>,
+    where
+        <T as IntoIterator>::Item: AsRef<str>,
     {
         let mut all = self.DATA.concat();
 
@@ -344,16 +341,15 @@ impl RandKey {
     #[inline]
     #[allow(clippy::needless_range_loop)]
     pub fn add_item<T: IntoIterator+Clone>(&mut self, val: T) -> Result<(), GenError>
-        where <T as IntoIterator>::Item: AsRef<str>,
+    where
+        <T as IntoIterator>::Item: AsRef<str>,
     {
         if _CHECK_ASCII(val.clone().into_iter()) {
             let val = _GROUP(val.into_iter());
 
             for i in 0..self.DATA.len() {
-                unsafe {
-                    self.DATA.get_unchecked_mut(i).extend_from_slice(&val.get_unchecked(i));
-                    self.DATA.get_unchecked_mut(i).dedup_by_key(|x| _CHAR_FROM_STR(x) as u8);
-                }
+                self.DATA[i].extend_from_slice(&val[i]);
+                self.DATA[i].dedup_by_key(|x| _CHAR_FROM_STR(x) as u8);
             }
             Ok(())
         } else {
@@ -454,9 +450,9 @@ impl RandKey {
     #[inline]
     pub fn get_cnt(&self, kind: ASCIIExcludeCtrl) -> String {
         match kind {
-            Alphabetic  => self.ltr_cnt.to_string(),
+            Alphabetic => self.ltr_cnt.to_string(),
             Punctuation => self.sbl_cnt.to_string(),
-            Digit       => self.num_cnt.to_string(),
+            Digit => self.num_cnt.to_string(),
         }
     }
 
@@ -512,24 +508,24 @@ impl RandKey {
     #[rustfmt::skip]
     pub fn join(&mut self) -> Result<(), GenError> {
 
-        let mut inner_r_p = self.clone();
+        let mut inner = self.clone();
 
-        if Self::check_data(&inner_r_p).is_ok() {
-            let unit = &inner_r_p.UNIT;
-            let data = &inner_r_p.DATA;
+        if inner.check_data().is_ok() {
+            let unit = &inner.UNIT;
+            let data = &inner.DATA;
 
             // TODO: - Improve readability
             let mut PWD =
-                vec![(&mut inner_r_p.ltr_cnt, &data[0]),
-                     (&mut inner_r_p.sbl_cnt, &data[1]),
-                     (&mut inner_r_p.num_cnt, &data[2]),]
+                vec![(&mut inner.ltr_cnt, &data[0]),
+                     (&mut inner.sbl_cnt, &data[1]),
+                     (&mut inner.num_cnt, &data[2]),]
                     .into_iter()
                     .map(|(bignum, data)| {
                         _DIV_UNIT(unit, bignum)
                             .par_iter()
                             .map(|cnt| {
                                 _RAND_IDX(cnt, data.len())
-                                    .iter()
+                                    .par_iter()
                                     .map(|idx| data[*idx].clone())
                                     .collect::<String>()
                             })
@@ -547,7 +543,7 @@ impl RandKey {
             Ok(())
 
         } else {
-            Self::check_data(&inner_r_p)
+            inner.check_data()
         }
     }
 }

@@ -7,17 +7,14 @@ pub use {
 
 
 use {
+    crate::error::GenError,
     std::{
         str::FromStr,
         sync::{
             Arc,
-            atomic::{
-                Ordering::*,
-                AtomicUsize,
-            },
+            atomic::{Ordering::*, AtomicUsize},
         },
     },
-    crate::error::GenError,
 };
 
 
@@ -125,20 +122,22 @@ pub(crate) fn _DIV_UNIT(unit: &BigUint, n: &mut BigUint) -> Vec<BigUint> {
 /// Check whether the elements in the sequence are all ascii values
 #[inline]
 pub(crate) fn _CHECK_ASCII<T: IntoIterator>(v: T) -> bool
-    where <T as IntoIterator>::Item: AsRef<str>,
+where
+    <T as IntoIterator>::Item: AsRef<str>,
 {
     v.into_iter()
-     .find(|c| {
-         let c = _CHAR_FROM_STR(c);
-         !c.is_ascii() || c.is_ascii_control()
-     })
-     .is_none()
+        .find(|c| {
+            let c = _CHAR_FROM_STR(c);
+            !c.is_ascii() || c.is_ascii_control()
+        })
+        .is_none()
 }
 
 
 #[inline]
 pub(crate) fn _GROUP<T: IntoIterator>(v: T) -> Vec<Vec<String>>
-    where <T as IntoIterator>::Item: AsRef<str>,
+where
+    <T as IntoIterator>::Item: AsRef<str>,
 {
     use parking_lot::Mutex;
 
@@ -149,22 +148,22 @@ pub(crate) fn _GROUP<T: IntoIterator>(v: T) -> Vec<Vec<String>>
     let num = Mutex::new(Vec::<String>::new());
 
     v.par_iter().for_each(|c| {
-                    let mut temp;
-                    let c = _CHAR_FROM_STR(c);
+        let mut temp;
+        let c = _CHAR_FROM_STR(c);
 
-                    if c.is_ascii_alphabetic() {
-                        temp = ltr.lock();
-                        temp.push(c.clone().into());
-                    }
-                    if c.is_ascii_punctuation() {
-                        temp = sbl.lock();
-                        temp.push(c.clone().into());
-                    }
-                    if c.is_ascii_digit() {
-                        temp = num.lock();
-                        temp.push(c.clone().into());
-                    }
-                });
+        if c.is_ascii_alphabetic() {
+            temp = ltr.lock();
+            temp.push(c.clone().into());
+        }
+        if c.is_ascii_punctuation() {
+            temp = sbl.lock();
+            temp.push(c.clone().into());
+        }
+        if c.is_ascii_digit() {
+            temp = num.lock();
+            temp.push(c.clone().into());
+        }
+    });
 
     vec![ltr.into_inner(), sbl.into_inner(), num.into_inner()]
 }
