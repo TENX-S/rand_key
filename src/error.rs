@@ -5,7 +5,6 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum GenError {
-
     #[error("The corresponding character is missing!")]
     MissChar,
 
@@ -23,5 +22,4 @@ pub enum GenError {
 
     #[error("Require consistent field")]
     InconsistentField,
-
 }
