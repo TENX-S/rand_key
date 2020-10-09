@@ -36,7 +36,7 @@
 
 
 #![allow(non_snake_case)]
-#![deny(unused, dead_code, rust_2018_idioms,)]
+#![allow(unused, dead_code, rust_2018_idioms,)]
 
 
 mod prelude;
@@ -48,7 +48,7 @@ use utils::*;
 use error::GenError;
 use self::ASCIIExcludeCtrl::*;
 use crate::prelude::AsBiguint;
-
+use std::cell::RefCell;
 
 /// struct `RandKey`
 #[derive(Clone, Debug)]
@@ -56,7 +56,7 @@ pub struct RandKey {
     ltr_cnt: BigUint,
     sbl_cnt: BigUint,
     num_cnt: BigUint,
-    key:     String,
+    key:     RefCell<String>,
     UNIT:    BigUint,
     DATA:    Vec<Vec<String>>,
 }
@@ -105,7 +105,7 @@ impl RandKey {
                 ltr_cnt: ltr_cnt.as_biguint()?,
                 sbl_cnt: sbl_cnt.as_biguint()?,
                 num_cnt: num_cnt.as_biguint()?,
-                key:     String::new(),
+                key:     RefCell::new(String::new()),
                 UNIT:    BigUint::from(u16::MAX),
                 DATA:    _DATA(),
             })
@@ -137,7 +137,7 @@ impl RandKey {
     /// # }
     /// ```
     #[inline]
-    pub fn key(&self) -> &str { &self.key }
+    pub fn key(&self) -> String { self.key.clone().into_inner() }
 
 
     /// Set the key of `RandKey`, depend on the name of operation.
@@ -171,13 +171,15 @@ impl RandKey {
         use self::SetRandKeyOp::*;
         let (val_ltr_cnt, val_sbl_cnt, val_num_cnt) = _CNT(val)?;
 
+        let mut mut_ref_key = self.key.borrow_mut();
+
         match op {
 
             Update => {
                 self.ltr_cnt = val_ltr_cnt;
                 self.sbl_cnt = val_sbl_cnt;
                 self.num_cnt = val_num_cnt;
-                self.key = val.into();
+                *mut_ref_key = val.into();
 
                 Ok(())
             }
@@ -188,7 +190,7 @@ impl RandKey {
                     &self.num_cnt,) == (&val_ltr_cnt,
                                         &val_sbl_cnt,
                                         &val_num_cnt,) {
-                    self.key = val.into();
+                    *mut_ref_key = val.into();
 
                     Ok(())
                 } else {
@@ -446,12 +448,12 @@ impl RandKey {
     /// # }
     /// ```
     #[inline]
-    pub fn len(&self) -> String { self.key.len().to_string() }
+    pub fn len(&self) -> String { self.key.borrow().len().to_string() }
 
 
     /// Returns true if this `RandKey` has a length of zero, and false otherwise.
     #[inline]
-    pub fn is_empty(&self) -> bool { self.key.is_empty() }
+    pub fn is_empty(&self) -> bool { self.key.borrow().is_empty() }
 
 
     /// Get count of `RandKey`
@@ -530,7 +532,7 @@ impl RandKey {
     /// ```
     #[inline]
     #[rustfmt::skip]
-    pub fn join(&mut self) -> Result<(), GenError> {
+    pub fn join(&self) -> Result<(), GenError> {
 
         let mut inner_r_p = self.clone();
 
@@ -562,7 +564,10 @@ impl RandKey {
             // This is absolutely safe, because they are all ASCII characters except control ones.
             let bytes = unsafe { PWD.as_bytes_mut() };
             bytes.shuffle(&mut thread_rng());
-            self.key = bytes.par_iter().map(|s| *s as char).collect::<String>();
+
+            let mut mut_ref_key = self.key.borrow_mut();
+
+            *mut_ref_key = bytes.par_iter().map(|s| *s as char).collect::<String>();
 
             Ok(())
 
