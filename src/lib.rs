@@ -36,8 +36,7 @@
 //! It will take up huge even all RAM and may harm your computer.
 
 #![allow(non_snake_case)]
-#![deny(unused, dead_code, rust_2018_idioms)]
-
+#![deny(unused, dead_code)]
 
 
 mod error;
@@ -45,7 +44,7 @@ mod prelude;
 mod utils;
 
 
-use {utils::*, std::cell::RefCell, error::GenError, self::ASCIIExcludeCtrl::*, crate::prelude::AsBiguint};
+use {utils::*, error::GenError, std::cell::RefCell, self::ASCIIExcludeCtrl::*, crate::prelude::AsBiguint};
 
 
 pub(crate) const DEFAULT_UNIT: usize = 2 << 19;
@@ -58,7 +57,7 @@ pub struct RandKey {
     sbl_cnt: BigUint,
     num_cnt: BigUint,
     key:     RefCell<String>,
-    UNIT:    BigUint,
+    UNIT:    RefCell<BigUint>,
     DATA:    Vec<Vec<String>>,
 }
 
@@ -70,6 +69,7 @@ pub trait ToRandKey {
 }
 
 
+/// Valid Operations for `RandKey::set_key()`
 pub enum SetRandKeyOp {
     Update,
     Check,
@@ -107,8 +107,8 @@ impl RandKey {
                 ltr_cnt: ltr_cnt.as_biguint()?,
                 sbl_cnt: sbl_cnt.as_biguint()?,
                 num_cnt: num_cnt.as_biguint()?,
-                key:     RefCell::new(String::new()),                        
-                UNIT:    BigUint::from(DEFAULT_UNIT),
+                key:     RefCell::new(String::new()),
+                UNIT:    RefCell::new(BigUint::from(DEFAULT_UNIT)),
                 DATA:    _DEFAULT_DATA(),
             })
         } else {
@@ -222,13 +222,14 @@ impl RandKey {
 
     /// [set a right `UNIT` number](https://docs.rs/rand_pwd/1.1.3/rand_pwd/#the-unit-field).
     #[inline]
-    pub fn set_unit(&mut self, val: impl AsRef<str>) -> Result<(), GenError> {
+    pub fn set_unit(&self, val: impl AsRef<str>) -> Result<(), GenError> {
         let val = val.as_biguint()?;
+        let mut mut_ref_unit = self.UNIT.borrow_mut();
 
         if val == BigUint::zero() {
             Err(GenError::InvalidUnit)
         } else {
-            self.UNIT = val;
+            *mut_ref_unit = val;
             Ok(())
         }
     }
@@ -354,6 +355,7 @@ impl RandKey {
                 self.DATA[i].extend_from_slice(&val[i]);
                 self.DATA[i].dedup_by_key(|x| _CHAR_FROM_STR(x) as u8);
             }
+
             Ok(())
         } else {
             Err(GenError::InvalidChar)
@@ -484,12 +486,11 @@ impl RandKey {
     /// # }
     /// ```
     #[inline]
-    #[rustfmt::skip]
     pub fn set_cnt(&mut self, kind: ASCIIExcludeCtrl, val: impl AsRef<str>) {
         match kind {
-            Alphabetic  => self.ltr_cnt = val.as_biguint().unwrap(),
+            Alphabetic => self.ltr_cnt = val.as_biguint().unwrap(),
             Punctuation => self.sbl_cnt = val.as_biguint().unwrap(),
-            Digit       => self.num_cnt = val.as_biguint().unwrap(),
+            Digit => self.num_cnt = val.as_biguint().unwrap(),
         }
     }
 
@@ -514,7 +515,7 @@ impl RandKey {
         let mut inner = self.clone();
 
         if inner.check_data().is_ok() {
-            let unit = &inner.UNIT;
+            let unit = &inner.UNIT.clone().into_inner();
             let data = &inner.DATA;
 
             // TODO: - Improve readability
