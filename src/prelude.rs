@@ -4,7 +4,6 @@ use {
         fmt::{self, Display, Formatter},
     },
     crate::{
-        DEFAULT_UNIT,
         error::GenError,
         RandKey, ToRandKey,
         SetRandKeyOp::Update,
@@ -12,6 +11,7 @@ use {
     },
 };
 
+pub(crate) const _DEFAULT_UNIT: usize = 2 << 19;
 
 impl Default for RandKey {
     /// The default value of `RandKey`
@@ -22,7 +22,7 @@ impl Default for RandKey {
             sbl_cnt: Default::default(),
             num_cnt: Default::default(),
             key:     Default::default(),
-            UNIT:    RefCell::new(BigUint::from(DEFAULT_UNIT)),
+            UNIT:    RefCell::new(BigUint::from(_DEFAULT_UNIT)),
             DATA:    _DEFAULT_DATA(),
         }
     }
