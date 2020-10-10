@@ -23,3 +23,4 @@ pub enum GenError {
     #[error("Require consistent field")]
     InconsistentField,
 }
+

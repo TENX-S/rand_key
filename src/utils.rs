@@ -95,6 +95,7 @@ pub(crate) fn _RAND_IDX(cnt: &BigUint, length: usize) -> Vec<usize> {
     }
 
     idxs
+
 }
 
 
@@ -116,17 +117,19 @@ pub(crate) fn _DIV_UNIT(unit: &BigUint, n: &mut BigUint) -> Vec<BigUint> {
     }
 
     ret
+
 }
 
 
 /// Check whether the elements in the sequence are all ascii values
 #[inline]
-pub(crate) fn _CHECK_ASCII(v: &[impl AsRef<str>]) -> bool
-{
-    v.iter().find(|c| {
+pub(crate) fn _CHECK_ASCII(v: &[impl AsRef<str>]) -> bool {
+    v.iter()
+     .find(|c| {
             let c = _CHAR_FROM_STR(c);
             !c.is_ascii() || c.is_ascii_control()
-        }).is_none()
+        })
+     .is_none()
 }
 
 
@@ -160,8 +163,10 @@ pub(crate) fn _GROUP(v: &[impl AsRef<str>]) -> Vec<Vec<String>> {
     });
 
     vec![ltr.into_inner(), sbl.into_inner(), num.into_inner()]
+
 }
 
 
 #[inline]
 pub(crate) fn _CHAR_FROM_STR(s: impl AsRef<str>) -> char { char::from_str(s.as_ref()).unwrap() }
+

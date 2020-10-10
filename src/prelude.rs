@@ -11,7 +11,32 @@ use {
     },
 };
 
+
+
+
 pub(crate) const _DEFAULT_UNIT: usize = 2 << 19;
+
+
+pub trait AsBiguint {
+    type Output;
+    fn as_biguint(&self) -> Self::Output;
+}
+
+
+impl<T: AsRef<str>> AsBiguint for T {
+    type Output = Result<BigUint, GenError>;
+
+    #[inline]
+    fn as_biguint(&self) -> Self::Output {
+        let convert = self.as_ref().parse::<BigUint>();
+        if let Ok(result) = convert {
+            Ok(result)
+        } else {
+            Err(GenError::InvalidNumber)
+        }
+    }
+}
+
 
 impl Default for RandKey {
     /// The default value of `RandKey`
@@ -47,23 +72,3 @@ impl<T: AsRef<str>> ToRandKey for T {
     }
 }
 
-
-pub trait AsBiguint {
-    type Output;
-    fn as_biguint(&self) -> Self::Output;
-}
-
-
-impl<T: AsRef<str>> AsBiguint for T {
-    type Output = Result<BigUint, GenError>;
-
-    #[inline]
-    fn as_biguint(&self) -> Self::Output {
-        let convert = self.as_ref().parse::<BigUint>();
-        if let Ok(result) = convert {
-            Ok(result)
-        } else {
-            Err(GenError::InvalidNumber)
-        }
-    }
-}

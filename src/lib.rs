@@ -35,6 +35,7 @@
 //! Threads did nothing useful! And capcity of the `Vec` is 1M at least!
 //! It will take up huge even all RAM and may harm your computer.
 
+
 #![allow(non_snake_case)]
 #![deny(unused, dead_code)]
 
@@ -44,9 +45,13 @@ mod prelude;
 mod utils;
 
 
-use {utils::*, error::GenError, std::cell::RefCell, self::ASCIIExcludeCtrl::*, crate::prelude::{AsBiguint, _DEFAULT_UNIT,}};
-
-
+use {
+    utils::*,
+    error::GenError,
+    std::cell::RefCell,
+    self::ASCIIExcludeCtrl::*,
+    crate::prelude::{AsBiguint, _DEFAULT_UNIT,}
+};
 
 
 /// struct `RandKey`
@@ -546,3 +551,4 @@ impl RandKey {
         }
     }
 }
+
