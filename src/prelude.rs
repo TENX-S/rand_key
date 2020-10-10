@@ -1,6 +1,5 @@
 use {
     std::{
-        ops::{Add, AddAssign},
         fmt::{self, Display, Formatter},
     },
     crate::{
@@ -57,7 +56,6 @@ pub trait AsBiguint {
 
 
 impl<T: AsRef<str>> AsBiguint for T {
-
     type Output = Result<BigUint, GenError>;
 
     #[inline]
@@ -69,5 +67,4 @@ impl<T: AsRef<str>> AsBiguint for T {
             Err(GenError::InvalidNumber)
         }
     }
-
 }
