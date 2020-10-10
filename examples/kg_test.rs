@@ -5,16 +5,14 @@ use std::{env::args, error::Error};
 
 
 fn main() -> Result<(), Box<dyn Error>> {
-
     let demands: Vec<String> = args().skip(1).collect();
 
-    let mut r_p;
+    let r_p;
 
     if demands.is_empty() {
         r_p = RandKey::new("10", "2", "3")?;
         r_p.join()?;
         println!("{}", r_p);
-
     } else {
         let ltr_cnt = &demands[0];
         let sbl_cnt = &demands[1];

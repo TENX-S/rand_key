@@ -1,5 +1,6 @@
 use {
     std::{
+        cell::RefCell,
         fmt::{self, Display, Formatter},
     },
     crate::{
@@ -12,8 +13,6 @@ use {
 };
 
 
-
-
 impl Default for RandKey {
     /// The default value of `RandKey`
     #[inline]
@@ -23,7 +22,7 @@ impl Default for RandKey {
             sbl_cnt: Default::default(),
             num_cnt: Default::default(),
             key:     Default::default(),
-            UNIT:    BigUint::from(DEFAULT_UNIT),
+            UNIT:    RefCell::new(BigUint::from(DEFAULT_UNIT)),
             DATA:    _DEFAULT_DATA(),
         }
     }
