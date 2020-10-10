@@ -3,12 +3,12 @@ name = "rand_key"
 version = "1.2.0"
 authors = ["Ares <coldswind@pm.me>"]
 edition = "2018"
-description = "Generate random password"
+description = "Generate random key"
 documentation = "https://docs.rs/rand_pwd"
 repository = "https://github.com/TENX-S/rand_key"
 license = "MIT"
 readme = "README.md"
-keywords = ["password", "random", "random_password"]
+keywords = ["password", "random", "key"]
 categories = ["cryptography"]
 
 
@@ -22,7 +22,6 @@ codegen-units = 1
 rand = "0.7.3"
 rayon = "1.3.1"
 thiserror = "1.0"
-crossbeam = "0.7"
 num-bigint = "0.3.0"
 num-traits = "0.2.12"
 parking_lot = "0.11.0"

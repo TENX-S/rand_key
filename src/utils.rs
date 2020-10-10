@@ -121,27 +121,21 @@ pub(crate) fn _DIV_UNIT(unit: &BigUint, n: &mut BigUint) -> Vec<BigUint> {
 
 /// Check whether the elements in the sequence are all ascii values
 #[inline]
-pub(crate) fn _CHECK_ASCII<T: IntoIterator>(v: T) -> bool
-where
-    <T as IntoIterator>::Item: AsRef<str>,
+pub(crate) fn _CHECK_ASCII(v: &[impl AsRef<str>]) -> bool
 {
-    v.into_iter()
-        .find(|c| {
+    v.iter().find(|c| {
             let c = _CHAR_FROM_STR(c);
             !c.is_ascii() || c.is_ascii_control()
-        })
-        .is_none()
+        }).is_none()
 }
 
 
 #[inline]
-pub(crate) fn _GROUP<T: IntoIterator>(v: T) -> Vec<Vec<String>>
-where
-    <T as IntoIterator>::Item: AsRef<str>,
-{
+pub(crate) fn _GROUP(v: &[impl AsRef<str>]) -> Vec<Vec<String>> {
+
     use parking_lot::Mutex;
 
-    let v: Vec<String> = v.into_iter().map(|x| x.as_ref().to_string()).collect();
+    let v: Vec<String> = v.iter().map(|x| x.as_ref().to_string()).collect();
 
     let ltr = Mutex::new(Vec::<String>::new());
     let sbl = Mutex::new(Vec::<String>::new());

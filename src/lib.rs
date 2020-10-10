@@ -44,10 +44,9 @@ mod prelude;
 mod utils;
 
 
-use {utils::*, error::GenError, std::cell::RefCell, self::ASCIIExcludeCtrl::*, crate::prelude::AsBiguint};
+use {utils::*, error::GenError, std::cell::RefCell, self::ASCIIExcludeCtrl::*, crate::prelude::{AsBiguint, _DEFAULT_UNIT,}};
 
 
-pub(crate) const DEFAULT_UNIT: usize = 2 << 19;
 
 
 /// struct `RandKey`
@@ -108,7 +107,7 @@ impl RandKey {
                 sbl_cnt: sbl_cnt.as_biguint()?,
                 num_cnt: num_cnt.as_biguint()?,
                 key:     RefCell::new(String::new()),
-                UNIT:    RefCell::new(BigUint::from(DEFAULT_UNIT)),
+                UNIT:    RefCell::new(BigUint::from(_DEFAULT_UNIT)),
                 DATA:    _DEFAULT_DATA(),
             })
         } else {
@@ -301,20 +300,18 @@ impl RandKey {
     /// # }
     /// ```
     #[inline]
-    pub fn del_item<T: IntoIterator+Clone>(&mut self, items: T) -> Result<(), GenError>
-    where
-        <T as IntoIterator>::Item: AsRef<str>,
-    {
-        let mut all = self.DATA.concat();
+    pub fn del_item(&mut self, items: &[impl AsRef<str>]) -> Result<(), GenError> {
 
-        if _CHECK_ASCII(items.clone().into_iter()) {
-            let mut v = items.into_iter().map(_CHAR_FROM_STR).collect::<Vec<_>>();
+        let mut concat_data: Vec<String> = self.DATA.concat();
 
-            v.dedup_by_key(|x| char::clone(x) as u8);
+        if _CHECK_ASCII(items) {
 
-            if v.iter().find(|x| !all.contains(&x.to_string())).is_none() {
-                all.retain(|x| !v.contains(&_CHAR_FROM_STR(x)));
-                self.DATA = _GROUP(all);
+            let mut items: Vec<char> = items.iter().map(_CHAR_FROM_STR).collect();
+            items.dedup_by_key(|x| *x as u8);
+
+            if items.iter().any(|x| concat_data.contains(&x.to_string())) {
+                concat_data.retain(|x| !items.contains(&_CHAR_FROM_STR(x)));
+                self.DATA = _GROUP(&concat_data);
 
                 Ok(())
             } else {
@@ -344,12 +341,9 @@ impl RandKey {
     /// ```
     #[inline]
     #[allow(clippy::needless_range_loop)]
-    pub fn add_item<T: IntoIterator+Clone>(&mut self, val: T) -> Result<(), GenError>
-    where
-        <T as IntoIterator>::Item: AsRef<str>,
-    {
-        if _CHECK_ASCII(val.clone().into_iter()) {
-            let val = _GROUP(val.into_iter());
+    pub fn add_item(&mut self, val: &[impl AsRef<str>]) -> Result<(), GenError> {
+        if _CHECK_ASCII(val) {
+            let val = _GROUP(val);
 
             for i in 0..self.DATA.len() {
                 self.DATA[i].extend_from_slice(&val[i]);
@@ -384,11 +378,9 @@ impl RandKey {
     /// ```
     #[inline]
     #[rustfmt::skip]
-    pub fn replace_data<T: IntoIterator+Clone>(&mut self, val: T) -> Result<(), GenError>
-        where <T as IntoIterator>::Item: AsRef<str>
-    {
+    pub fn replace_data(&mut self, val: &[impl AsRef<str>]) -> Result<(), GenError> {
 
-        if _CHECK_ASCII(val.clone().into_iter()) {
+        if _CHECK_ASCII(val) {
 
             self.DATA = {
 
@@ -396,7 +388,7 @@ impl RandKey {
                 let mut sbl = vec![];
                 let mut num = vec![];
 
-                val.into_iter().for_each(|x| {
+                val.iter().for_each(|x| {
                     let x = _CHAR_FROM_STR(x);
 
                     if x.is_ascii_alphabetic()  { ltr.push(x.into()); }
