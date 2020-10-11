@@ -5,6 +5,7 @@ use std::{env::args, error::Error};
 
  
 fn main() -> Result<(), Box<dyn Error>> {
+    
     let demands: Vec<String> = args().skip(1).collect();
 
     let r_p;
@@ -21,7 +22,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         r_p = RandKey::new(ltr_cnt, sbl_cnt, num_cnt)?;
 
         if demands.len() == 4 {
-            let unit = demands[3].clone();
+            let unit = &demands[3];
             r_p.set_unit(unit)?;
         }
 

@@ -8,13 +8,7 @@ pub use {
 
 use {
     crate::error::GenError,
-    std::{
-        str::FromStr,
-        sync::{
-            Arc,
-            atomic::{Ordering::*, AtomicUsize},
-        },
-    },
+    std::{str::FromStr,sync::{Arc, atomic::{Ordering::*, AtomicUsize},},},
 };
 
 
